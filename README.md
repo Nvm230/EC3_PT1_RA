@@ -199,3 +199,10 @@ El documento resultante es `reporte.pdf`.
 
 ### Exportación Cinematográfica
 Ambas animaciones fueron exportadas en cámara lenta cinematográfica (80 y 85 fotogramas a 25 FPS, ~3.3 segundos) acompañadas de una pausa de 0.6 segundos en reposo al aterrizar, asegurando una visualización nítida y elegante de cada etapa del movimiento.
+
+---
+
+## 6. Integrantes
+
+- Brenda kiara De la cruz Menacho
+- Marco Antonio Alegria Rodriguez

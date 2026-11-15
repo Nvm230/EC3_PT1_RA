@@ -4,6 +4,9 @@
 ---
 
 ### Autores & Filiación
+- **Integrantes:**
+  - Brenda kiara De la cruz Menacho
+  - Marco Antonio Alegria Rodriguez
 - **Curso:** Robótica Avanzada
 - **Institución:** Universidad de Ingeniería y Tecnología (UTEC)
 - **Plataforma de Simulación:** PyBullet Physics & Robot Descriptions (Unitree A1)
