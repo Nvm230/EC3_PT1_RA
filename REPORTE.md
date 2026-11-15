@@ -12,6 +12,7 @@
 - **Plataforma de Simulación:** PyBullet Physics & Robot Descriptions (Unitree A1)
 - **Motor de Optimización:** CasADi v3.8.2 + IPOPT v3.14 (MUMPS Linear Solver)
 - **Robot Cuadrúpedo:** Unitree A1 (12 Grados de Libertad Actuados)
+- **Repositorio de Código Fuente:** [https://github.com/Nvm230/EC3_PT1_RA](https://github.com/Nvm230/EC3_PT1_RA)
 
 ---
 

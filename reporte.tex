@@ -35,7 +35,9 @@
 \vspace{0.15cm} \\
 \textbf{Curso: Robótica Avanzada} \\
 Universidad de Ingeniería y Tecnología (UTEC) \\
-Plataforma: Unitree A1 $\cdot$ CasADi v3.8.2 $\cdot$ IPOPT $\cdot$ PyBullet Physics}
+Plataforma: Unitree A1 $\cdot$ CasADi v3.8.2 $\cdot$ IPOPT $\cdot$ PyBullet Physics \\
+\vspace{0.12cm} \\
+\textbf{Repositorio de Código:} \url{https://github.com/Nvm230/EC3_PT1_RA}}
 \date{\today}
 
 \begin{document}
@@ -53,7 +55,7 @@ La locomoción ágil en robots cuadrúpedos requiere movimientos dinámicos que 
 
 Asimismo, las maniobras acrobáticas con giros tridimensionales y variaciones angulares extremas (como el salto mortal hacia atrás o \textit{backflip}) representan la cúspide en control óptimo y optimización de trayectorias, debido al acoplamiento dinámico no lineal, la no convexidad del espacio de rotaciones $SO(3)$ y la estricta conservación del momento angular en ausencia de fuerzas de contacto.
 
-En este documento se analiza la factibilidad física y límites de Unitree A1, la formulación matemática del modelo SRBM, las restricciones por fases, la cinemática inversa analítica exacta y los resultados cualitativos y cuantitativos obtenidos en simulación física.
+En este documento se analiza la factibilidad física y límites de Unitree A1, la formulación matemática del modelo SRBM, las restricciones por fases, la cinemática inversa analítica exacta y los resultados cualitativos y cuantitativos obtenidos en simulación física. Todo el código fuente ejecutable, modelos dinámicos, formulación en CasADi, scripts de simulación y animaciones se encuentran disponibles en el repositorio de GitHub: \url{https://github.com/Nvm230/EC3_PT1_RA}.
 
 \section{Análisis de Factibilidad Física y Límites del Robot Unitree A1}
 Una interrogante crítica en la formulación del Problema 1 es: \textbf{¿Por qué el robot no puede atravesar el obstáculo caminando y qué altura de obstáculo respeta los límites mecánicos del robot?}
