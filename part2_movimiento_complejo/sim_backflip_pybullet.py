@@ -174,8 +174,8 @@ def run_simulation(gui=False, save_media=True):
         if save_media:
             img = p.getCameraImage(1024, 768, viewMatrix=view_matrix, projectionMatrix=proj_matrix,
                                    renderer=p.ER_TINY_RENDERER)
-            rgba = np.reshape(img[2], (768, 1024, 4))
-            pil_img = Image.fromarray(rgba[:, :, :3])
+            rgba = np.ascontiguousarray(np.reshape(img[2], (768, 1024, 4))[:, :, :3], dtype=np.uint8)
+            pil_img = Image.fromarray(rgba, mode="RGB")
 
             draw = ImageDraw.Draw(pil_img)
             font_title = get_font(20, bold=True)
