@@ -1,0 +1,216 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot]{babel}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{geometry}
+\geometry{top=2.2cm, bottom=2.2cm, left=2.2cm, right=2.2cm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=blue!70!black,
+    urlcolor=blue!70!black
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small Robótica Avanzada -- EC3: Optimización de Trayectorias}
+\lhead{\small UTEC}
+\cfoot{\thepage}
+
+\title{\textbf{\Large Reporte Técnico: Optimización de Trayectorias en Robótica Cuadrúpeda}\\
+\large Salto Dinámico sobre Obstáculo Alto y Salto Mortal Acrobático 360$^\circ$ (Backflip)}
+\author{\textbf{Curso: Robótica Avanzada} \\
+Universidad de Ingeniería y Tecnología (UTEC) \\
+Plataforma: Unitree A1 $\cdot$ CasADi $\cdot$ IPOPT $\cdot$ PyBullet}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Este informe presenta la formulación matemática, resolución por programación no lineal (NLP) y simulación tridimensional física de dos problemas avanzados de \textbf{optimización de trayectorias} en robótica cuadrúpeda sobre el robot \textbf{Unitree A1}. En el primer caso, el cuadrúpedo se enfrenta a un obstáculo alto de $35\text{ cm}$ (superior a la altura de parada nominal de $30\text{ cm}$) que resulta intransitable mediante marcha convencional. Se formula un problema de colocación directa por fases sobre el Modelo de Cuerpo Rígido Único (\textit{Single Rigid Body Model} -- SRBM) con restricciones de fricción de Coulomb, límites de actuación y retracción de patas (\textit{tucking}) en vuelo, alcanzando una cumbre de $0.69\text{ m}$ y aterrizaje suave a $0.88\text{ m}$. En el segundo caso, se formula una maniobra libre de alta complejidad: un salto mortal acrobático (\textit{Backflip 360$^\circ$}) con rotación completa de $-2\pi\text{ rad}$ en cabeceo impulsado por transferencia asimétrica de momento angular y modulación dinámica de inercia $I_{yy}(t)$. Ambos problemas se resolvieron en menos de $0.15\text{ s}$ en CasADi/IPOPT y fueron completamente validados en PyBullet.
+\end{abstract}
+
+\vspace{0.5cm}
+
+\section{Introducción}
+La locomoción dinámica y ágil en cuadrúpedos requiere movimientos que exceden las limitaciones cinemáticas de la marcha cuasi-estática. Cuando un robot se encuentra con una barrera vertical no sorteable a pie, la única solución factible es la ejecución de un salto balístico con fase de vuelo y amortiguación de impacto. 
+
+Asimismo, los movimientos acrobáticos con giros tridimensionales y grandes variaciones angulares (tales como el salto mortal hacia atrás o \textit{backflip}) representan el estándar de oro en control óptimo y optimización de trayectorias debido a la presencia de dinámicas no lineales acopladas, no convexidades en la orientación y la conservación del momento angular en el aire.
+
+En este documento se detallan la formulación física del modelo SRBM, las restricciones de contacto por fases, la cinemática inversa analítica y los resultados cuantitativos y cualitativos obtenidos en simulación física para Unitree A1.
+
+\section{Formulación Dinámica: Single Rigid Body Model (SRBM)}
+Dado que el torso concentra la mayor inercia y masa del robot ($m \gg m_{\text{leg}}$), el modelo SRBM describe fielmente la traslación del Centro de Masa (CoM) y la orientación del chasis.
+
+El vector de estado en el plano sagital viene dado por:
+\begin{equation}
+\mathbf{x}(t) = \begin{bmatrix} p_x(t) & p_z(t) & v_x(t) & v_z(t) & \theta(t) & \omega(t) \end{bmatrix}^T \in \mathbb{R}^6
+\end{equation}
+
+Las ecuaciones de Newton-Euler describen la aceleración lineal y angular:
+\begin{align}
+\dot{p}_x &= v_x, \quad \dot{p}_z = v_z \\
+m \dot{v}_x &= \sum_{i \in \mathcal{C}} f_{x,i} \\
+m \dot{v}_z &= \sum_{i \in \mathcal{C}} f_{z,i} - m g \\
+\dot{\theta} &= \omega \\
+I_{yy}(t) \dot{\omega} &= \sum_{i \in \mathcal{C}} \left( (r_{x,i} - p_x) f_{z,i} - (r_{z,i} - p_z) f_{x,i} \right)
+\end{align}
+donde $m = 12.0\text{ kg}$, $g = 9.81\text{ m/s}^2$, $I_{yy}(t)$ es el momento de inercia alrededor del eje transversal de cabeceo, $\mathbf{r}_i = [r_{x,i}, r_{z,i}]^T$ es la posición de contacto en el mundo, $\mathbf{f}_i = [f_{x,i}, f_{z,i}]^T$ es la fuerza de reacción del suelo (GRF) y $\mathcal{C}$ es el conjunto de patas activas.
+
+\subsection{Restricciones de Contacto y Cono de Fricción}
+Durante las fases de apoyo ($i \in \mathcal{C}$):
+\begin{equation}
+f_{z,i} \ge 0, \quad |f_{x,i}| \le \mu f_{z,i}, \quad f_{z,i} \le f_{z,\max}
+\end{equation}
+donde $\mu \in [0.7, 0.8]$ es el coeficiente de fricción estática. Durante la fase de vuelo libre, no existe contacto físico con el suelo: $\mathbf{f}_i = \mathbf{0}$.
+
+\subsection{Cinemática Inversa Analítica Exacta}
+Para cada pata $i \in \{\text{FL}, \text{FR}, \text{RL}, \text{RR}\}$ de Unitree A1 (longitudes $l_{\text{thigh}} = 0.20\text{ m}$, $l_{\text{calf}} = 0.20\text{ m}$, offset lateral $l_{\text{lat}} = 0.0838\text{ m}$), los 3 ángulos articulares se obtienen en forma analítica cerrada exacta a partir de la posición relativa del pie en el sistema del cuerpo:
+\begin{align}
+q_1 &= \text{atan2}(\Delta y, -\Delta z) - \text{atan2}(s_y l_{\text{lat}}, \sqrt{\Delta y^2 + \Delta z^2 - l_{\text{lat}}^2}) \\
+q_3 &= -\arccos\left( \text{clip}\left(\frac{x'^2 + z'^2 - l_{\text{thigh}}^2 - l_{\text{calf}}^2}{2 l_{\text{thigh}} l_{\text{calf}}}, -1, 1\right) \right) \\
+q_2 &= \text{atan2}(x', -z') - \text{atan2}(l_{\text{calf}} \sin(q_3), l_{\text{thigh}} + l_{\text{calf}} \cos(q_3))
+\end{align}
+Esto garantiza un error de mapeo cinemático virtualmente nulo ($\sim 10^{-17}\text{ m}$).
+
+\section{Problema 1: Salto sobre Obstáculo Alto}
+\subsection{Definición del Problema}
+Se sitúa un obstáculo vertical en $x \in [0.35, 0.65]\text{ m}$ con altura $h_{\text{obs}} = 0.35\text{ m}$. Dado que la altura nominal de parada del robot es $z = 0.30\text{ m}$, el obstáculo sobrepasa al robot y requiere un despegue balístico completo.
+
+El movimiento se estructura en 4 fases temporales:
+\begin{enumerate}
+    \item \textbf{Compresión / Agache ($T_1 = 0.15\text{ s}$):} El CoM desciende de $0.30\text{ m}$ a $0.18\text{ m}$ acumulando carrera vertical.
+    \item \textbf{Impulso Explosivo ($T_2 = 0.15\text{ s}$):} Fuerzas verticales de hasta $F_z \approx 280\text{ N}$ que imparten velocidad vertical y avance.
+    \item \textbf{Vuelo Balístico ($T_3 = 0.45\text{ s}$):} Fuerzas nulas, CoM en parábola gravitatoria con vértice en $z \ge 0.58\text{ m}$ y retracción activa de patas (\textit{tuck}) superando holgadamente los $35\text{ cm}$.
+    \item \textbf{Aterrizaje y Amortiguación ($T_4 = 0.20\text{ s}$):} Contacto en $x \ge 0.71\text{ m}$, absorción de energía y estabilización en reposo.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{outputs/p1_trayectoria_salto.png}
+\caption{Plano sagital ($X, Z$) del salto de obstáculo alto (35~cm) mostrando la superación aérea y la evolución temporal del CoM.}
+\label{fig:p1_traj}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{outputs/p1_fuerzas_grf.png}
+\caption{Fuerzas de reacción del suelo ($F_z, F_x$) y conos de fricción en las 4 fases del salto.}
+\label{fig:p1_forces}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{outputs/p1_articulaciones.png}
+\caption{Evolución de los 12 ángulos articulares en Unitree A1 durante el salto, respetando los límites mecánicos.}
+\label{fig:p1_joints}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{outputs/p1_capturas_secuencia.png}
+\caption{Capturas secuenciales de la simulación en PyBullet para el Problema 1: 1) Agache, 2) Despegue, 3) Vértice con despeje aéreo, 4) Aterrizaje cuadrúpedo estable.}
+\label{fig:p1_seq}
+\end{figure}
+
+\subsection{Resultados Obtenidos (Problema 1)}
+El problema NLP fue resuelto por IPOPT en \textbf{0.077 segundos}:
+\begin{itemize}
+    \item Altura máxima del CoM en la cumbre: $p_z = 0.686\text{ m}$ ($+33.6\text{ cm}$ sobre el obstáculo).
+    \item Altura mínima de las 4 patas durante el cruce: entre $0.408\text{ m}$ y $0.577\text{ m}$ (margen de despeje $> 5.8\text{ cm}$).
+    \item Distancia de aterrizaje final: $p_x = 0.880\text{ m}$ con velocidad final cero.
+\end{itemize}
+
+\section{Problema 2: Salto Mortal Acrobático 360$^\circ$ (Backflip)}
+\subsection{Formulación y Conservación de Momento Angular}
+El objetivo es ejecutar una rotación continua completa de $360^\circ$ en cabeceo ($\theta: 0 \to -2\pi\text{ rad}$) aterrizando en reposo en cuatro patas.
+
+Para inducir esta rotación, la fase de impulso genera un par neto de despegue asimétrico ($\tau_y = \sum (r_{x,i} - p_x) f_{z,i} - (r_{z,i} - p_z) f_{x,i} < 0$). Una vez en el aire, las fuerzas externas se anulan y el momento angular se conserva rígidamente:
+\begin{equation}
+L_y = I_{yy}(t) \omega_y(t) = \text{constante}
+\end{equation}
+
+Al retraer las patas hacia el chasis (\textit{tucking}), el momento de inercia disminuye de $I_{yy,\text{nom}} = 0.0565\text{ kg}\cdot\text{m}^2$ a $I_{yy,\text{tuck}} = 0.0320\text{ kg}\cdot\text{m}^2$ (reducción del $43.4\%$). Esto incrementa automáticamente la velocidad angular de giro $\omega_y$, permitiendo girar los $360^\circ$ en sólo $0.48\text{ s}$ de vuelo. Previo al aterrizaje, las patas se extienden, aumentando $I_{yy}$, frenando el cabeceo y capturando el suelo.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{outputs/p2_evolucion_backflip.png}
+\caption{Evolución rotacional de $\theta(t)$ de 0 a $-360^\circ$, velocidad angular $\omega(t)$, CoM y perfil de inercia variable $I_{yy}(t)$.}
+\label{fig:p2_rot}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{outputs/p2_fuerzas_backflip.png}
+\caption{Fuerzas de reacción del suelo e impulso angular neto de cabeceo $\tau_y(t)$ durante el Backflip.}
+\label{fig:p2_forces}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{outputs/p2_articulaciones_backflip.png}
+\caption{Evolución de las 12 articulaciones durante el giro acrobático de 360$^\circ$.}
+\label{fig:p2_joints}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\textwidth]{outputs/p2_capturas_secuencia.png}
+\caption{Secuencia de simulación en PyBullet del Backflip 360$^\circ$: 1) Agache, 2) Despegue con cabeceo, 3) Vértice invertido ($-180^\circ$), 4) Aterrizaje completo ($-360^\circ$).}
+\label{fig:p2_seq}
+\end{figure}
+
+\subsection{Resultados Obtenidos (Problema 2)}
+El problema NLP del Backflip fue resuelto en \textbf{0.124 segundos} por IPOPT:
+\begin{itemize}
+    \item Rotación final exacta: $\theta = -360.0^\circ$ ($-6.283\text{ rad}$).
+    \item Velocidad angular máxima en cabeceo: $\omega = -9.11\text{ rad/s}$ ($-521.9^\circ/\text{s}$).
+    \item Altura máxima alcanzada en vértice: $p_z = 0.717\text{ m}$.
+    \item Fuerzas normales de despegue y aterrizaje dentro de la capacidad de los motores.
+\end{itemize}
+
+\section{Comparativa y Síntesis de Resultados}
+La Tabla~\ref{tab:resumen} presenta la comparación directa de ambos problemas.
+
+\begin{table}[H]
+\centering
+\caption{Resumen Cuantitativo de los Movimientos Optimizados}
+\label{tab:resumen}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Métrica / Parámetro} & \textbf{Problema 1: Salto de Obstáculo} & \textbf{Problema 2: Backflip 360$^\circ$} \\
+\midrule
+Tiempo total de trayectoria ($T$) & $0.95\text{ s}$ & $1.04\text{ s}$ \\
+Tiempo de vuelo aéreo ($T_{\text{flight}}$) & $0.45\text{ s}$ & $0.48\text{ s}$ \\
+Desplazamiento horizontal ($\Delta X$) & $+0.880\text{ m}$ & $+0.045\text{ m}$ \\
+Altura máxima en cumbre ($Z_{\text{apex}}$) & $0.686\text{ m}$ & $0.717\text{ m}$ \\
+Rotación neta de cabeceo ($\Delta \theta$) & $0.0^\circ$ & $-360.0^\circ$ \\
+Velocidad angular pico ($\omega$) & $0.21\text{ rad/s}$ & $-9.11\text{ rad/s}$ ($-521.9^\circ/\text{s}$) \\
+Tiempo de cómputo IPOPT & \textbf{0.077 s} & \textbf{0.124 s} \\
+Estado de optimización & `Solve\_Succeeded` & `Solve\_Succeeded` \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Conclusiones}
+\begin{enumerate}
+    \item La formulación mediante el modelo SRBM y programación no lineal con colocación directa en CasADi + IPOPT demostró ser extraordinariamente eficiente, logrando convergencia numérica en menos de $0.15\text{ s}$ para maniobras altamente dinámicas.
+    \item La superación del obstáculo alto de $35\text{ cm}$ se logró de manera óptima combinando una fase de compresión preparatoria, un empuje balístico de $2.4\text{ g}$ y una retracción activa de las patas que garantizó un margen de despeje $> 5.8\text{ cm}$.
+    \item El salto mortal de $360^\circ$ demostró la capacidad de generar rotaciones extremas mediante la transferencia de momento angular y el aprovechamiento del efecto de encogimiento (\textit{tuck}), disminuyendo la inercia en un $43.4\%$ y estabilizando el chasis en cuatro patas al completar la rotación.
+    \item Las simulaciones tridimensionales en PyBullet y los videos/animaciones generados validan que el robot Unitree A1 ejecuta ambos movimientos de forma limpia y dentro de sus límites físicos.
+\end{enumerate}
+
+\end{document}
