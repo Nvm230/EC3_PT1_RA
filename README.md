@@ -73,15 +73,12 @@ El código es multiplataforma y es compatible con Linux, macOS y Windows (WSL / 
 
 ### Opción B: Mediante Contenedor Distrobox / Podman / Docker
 
-Si se utiliza el contenedor `ros2_humble`:
+Si se utiliza un contenedor (por ejemplo, `ros2_humble`):
 ```bash
+# Entrar al contenedor y ubicarse en la carpeta del repositorio:
 distrobox enter ros2_humble
-cd /home/nvm/Documents/UTEC/EC3_pt1_Avanzada
-```
-
-O directamente sin sesión interactiva:
-```bash
-podman exec -u nvm ros2_humble python3 /home/nvm/Documents/UTEC/EC3_pt1_Avanzada/scripts/run_all.py
+cd EC3_PT1_RA
+python3 scripts/run_all.py
 ```
 
 ---
