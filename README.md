@@ -12,7 +12,7 @@ EC3_pt1_Avanzada/
 ├── README.md                      <- Guía de instalación, explicación teórica y ejecución
 ├── REPORTE.md                     <- Reporte técnico exhaustivo con formulación matemática y resultados
 ├── reporte.tex                    <- Documento fuente LaTeX del reporte académico
-├── reporte.pdf                    <- Reporte formal compilado en PDF (11 páginas con figuras de alta resolución)
+├── reporte.pdf                    <- Reporte formal compilado en PDF (12 páginas con figuras de alta resolución)
 ├── part1_salto_obstaculo/         <- PROBLEMA 1: Salto dinámico sobre obstáculo alto
 │   ├── modelo_srbm.py             <- Modelo dinámico SRBM y cinemática analítica directa/inversa
 │   ├── opt_salto_obstaculo.py     <- Optimización de trayectoria por fases (CasADi + IPOPT)
@@ -143,13 +143,14 @@ El documento resultante es `reporte.pdf`.
 ## 5. Resumen Teórico y Resultados Obtenidos
 
 ### Problema 1: Salto Dinámico sobre Obstáculo Alto
-- **Obstáculo:** Alto $h = 0.35\text{ m}$, ancho $30\text{ cm}$ en $x \in [0.35, 0.65]\text{ m}$.
-- **Reto físico:** La altura nominal del A1 es de $0.30\text{ m}$, por lo que el obstáculo supera la altura libre del chasis. No es posible caminarlo; se requiere un salto balístico completo con fase de vuelo y despegue a $F_z \approx 2.4\text{ g}$.
+- **Obstáculo:** Alto $h = 0.26\text{ m}$ ($26\text{ cm}$), ancho $12\text{ cm}$ en $x \in [0.52, 0.64]\text{ m}$.
+- **Reto físico:** La altura nominal del A1 es de $0.28 - 0.30\text{ m}$ y el despeje libre de vientre es de apenas $0.18 - 0.20\text{ m}$. El paso máximo en marcha en balanceo es de $0.06 - 0.08\text{ m}$. Por lo tanto, el obstáculo supera el vientre por $7\text{ cm}$, haciendo imposible cruzarlo caminando. Requiere un salto balístico completo con fase de vuelo y despegue a $a_z \approx 3g$.
 - **Resultado óptimo:**
-  - Altura máxima CoM: **$0.686\text{ m}$** ($+33.6\text{ cm}$ sobre la barrera).
-  - Altura mínima de patas en cruce: **$0.408\text{ m}$ a $0.577\text{ m}$** (margen de seguridad $> 5.8\text{ cm}$).
-  - Aterrizaje suave en $x = 0.880\text{ m}$ con velocidad residual nula.
-  - Tiempo de resolución IPOPT: **0.077 s**.
+  - Altura máxima CoM: **$0.665\text{ m}$** ($+40.5\text{ cm}$ sobre la barrera).
+  - Altura mínima de patas en cruce: **$z \ge 0.515\text{ m}$** (margen libre de seguridad de $+25.5\text{ cm}$).
+  - Aterrizaje amortiguado en $x = 0.992\text{ m}$ ($+35.2\text{ cm}$ post-obstáculo).
+  - **Cero colisiones físicas:** Verificado con detección de contactos en PyBullet (`getContactPoints = 0`).
+  - Tiempo de resolución IPOPT: **0.091 s**.
 
 ### Problema 2: Salto Mortal Acrobático 360° (Backflip)
 - **Reto físico:** Maniobra no lineal extrema con giro continuo de $\Delta \theta = -360.0^\circ$ ($-2\pi\text{ rad}$) en cabeceo.
@@ -158,7 +159,7 @@ El documento resultante es `reporte.pdf`.
   - Giro final completado: **$-360.0^\circ$**.
   - Velocidad angular pico: **$-9.11\text{ rad/s}$** ($-521.9^\circ/\text{s}$).
   - Altura máxima: **$0.717\text{ m}$** con inversión a $-180^\circ$ en cumbre.
-  - Tiempo de resolución IPOPT: **0.124 s**.
+  - Tiempo de resolución IPOPT: **0.125 s**.
 
 ---
 
