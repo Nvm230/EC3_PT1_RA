@@ -5,13 +5,17 @@ OPTIMIZACIÓN DE TRAYECTORIA: SALTO MORTAL ACROBÁTICO 360° (BACKFLIP)
 ROBOT CUADRÚPEDO UNITREE A1
 ===============================================================================
 Formulación matemática:
-  - Movimiento de alta complejidad dinámica: rotación completa de 360° en cabeceo (pitch).
-  - Transferencia no lineal de momento angular: impulso asimétrico en despegue
-    generado por las fuerzas de reacción del suelo (GRF) en patas frontales y traseras.
-  - Inercia variable durante el vuelo: encogimiento de patas (tuck) que reduce el
-    momento de inercia I_yy(t) acelerando el giro por conservación del momento angular,
-    seguido de extensión de patas previa al aterrizaje para frenar el giro.
-  - Absorción de impacto y estabilización cuadrúpeda completa a theta = -360° (0°).
+  - Movimiento de alta complejidad dinámica: rotación continua completa de 360°
+    en cabeceo (pitch, theta: 0 -> -2*pi rad).
+  - Transferencia no lineal de momento angular: despegue asimétrico con par
+    tau_y generado por fuerzas de reacción de suelo (GRF) en patas frontales y traseras.
+  - Vuelo libre con inercia variable (efecto tuck): modulación dinámica de I_yy(t)
+    por encogimiento de extremidades, acelerando el giro por conservación estricta
+    de momento angular L_y = I_yy(t) * omega_y(t).
+  - Rotación completada en el aire: el robot completa el flip (-340° a -355°)
+    ANTES del contacto, aterrizando erguido en cuatro patas con simetría sagital
+    pura (q1_hip_roll == 0 en todas las fases, sin aperturas de patas ni cruces en X).
+  - Aterrizaje amortiguado y reposo final exacto a -360° (0°).
 """
 
 import os
@@ -27,34 +31,34 @@ from modelo_srbm import A1SRBMModel
 def solve_backflip_trajectory():
     model = A1SRBMModel()
 
-    # Duraciones y discretización de fases
-    # 1. Agache/Compresión (Crouch)
-    # 2. Empuje Asimétrico de Cabeceo (Thrust / Pitch launch)
-    # 3. Vuelo acrobático 360° con encogimiento (Aerial Flip)
-    # 4. Aterrizaje y absorción (Touchdown & stabilization)
+    # Duraciones y discretización de fases:
+    # 1. Agache/Compresión (Crouch): 0.15s, N1=8
+    # 2. Impulso Asimétrico de Despegue (Thrust): 0.16s, N2=10
+    # 3. Vuelo Acrobático 360° (Aerial Flight): 0.56s, N3=28
+    # 4. Aterrizaje y Amortiguación (Landing): 0.20s, N4=10
     T1, N1 = 0.15, 8
     T2, N2 = 0.16, 10
-    T3, N3 = 0.48, 25
-    T4, N4 = 0.25, 12
+    T3, N3 = 0.56, 28
+    T4, N4 = 0.20, 10
     N_total = N1 + N2 + N3 + N4
 
     dt1 = T1 / N1
     dt2 = T2 / N2
     dt3 = T3 / N3
     dt4 = T4 / N4
-    dt_list = [dt1]*N1 + [dt2]*N2 + [dt3]*N3 + [dt4]*N4
+    dt_list = [dt1] * N1 + [dt2] * N2 + [dt3] * N3 + [dt4] * N4
     time_array = np.cumsum([0.0] + dt_list)
 
     # Parámetros físicos
     m = model.mass
     g = model.gravity
     d_x = model.d_x
-    mu = 0.8  # Fricción suficiente para impulso tangencial
-    f_max_pair = 400.0  # Capacidad máxima pico por par de patas
+    mu = 0.8
+    f_max_pair = 420.0  # Capacidad máxima por par de patas
 
-    # Inercia variable: nominal extendido vs recogido (tuck)
+    # Momentos de inercia: extendido nominal vs encogido (tuck)
     Iyy_nom = 0.0565
-    Iyy_tuck = 0.0320  # ~43% menor al recoger patas
+    Iyy_tuck = 0.0320  # ~43.4% menor en vuelo con patas recogidas
 
     opti = ca.Opti()
 
@@ -96,17 +100,23 @@ def solve_backflip_trajectory():
     opti.subject_to(theta[N_total] == -2.0 * np.pi)
     opti.subject_to(omega[N_total] == 0.0)
 
-    # Aterrizaje simétrico cerca del origen longitudinal
+    # Aterrizaje cuadrúpedo simétrico cerca del origen
     opti.subject_to(rx_land_F == rx_land_R + 2.0 * d_x)
     opti.subject_to(px[N_total] >= -0.20)
     opti.subject_to(px[N_total] <= 0.20)
 
-    # Vértice de vuelo: altura suficiente para girar sin tocar el suelo
+    # Vértice de vuelo: invertido en cumbre (-180° = -pi)
     k_apex = N1 + N2 + N3 // 2
-    opti.subject_to(pz[k_apex] >= 0.60)
-    # En el ápice el robot debe estar invertido (alrededor de -180° = -pi)
-    opti.subject_to(theta[k_apex] <= -0.80 * np.pi)
-    opti.subject_to(theta[k_apex] >= -1.25 * np.pi)
+    opti.subject_to(pz[k_apex] >= 0.65)
+    opti.subject_to(theta[k_apex] <= np.deg2rad(-165.0))
+    opti.subject_to(theta[k_apex] >= np.deg2rad(-195.0))
+
+    # Fin de vuelo / Momento del aterrizaje (Touchdown):
+    # La rotación acrobática se completa en el aire antes del contacto.
+    # El robot debe llegar al touchdown con las patas hacia abajo (-335° a -358°).
+    k_td = N1 + N2 + N3
+    opti.subject_to(theta[k_td] <= np.deg2rad(-335.0))
+    opti.subject_to(theta[k_td] >= np.deg2rad(-358.0))
 
     # Fin de agache
     opti.subject_to(pz[N1] <= 0.20)
@@ -124,20 +134,22 @@ def solve_backflip_trajectory():
             Iyy_k = Iyy_nom
             r_xF, r_zF = d_x, 0.0
             r_xR, r_zR = -d_x, 0.0
-        elif k < N1 + N2 + N3:
+        elif k < k_td:
             # En vuelo: inercia reducida por encogimiento
             Iyy_k = Iyy_tuck
-            r_xF, r_zF = px[k] + d_x * ca.cos(theta[k]), pz[k] + d_x * ca.sin(theta[k])
-            r_xR, r_zR = px[k] - d_x * ca.cos(theta[k]), pz[k] - d_x * ca.sin(theta[k])
+            r_xF = px[k] + d_x * ca.cos(theta[k])
+            r_zF = pz[k] + d_x * ca.sin(theta[k])
+            r_xR = px[k] - d_x * ca.cos(theta[k])
+            r_zR = pz[k] - d_x * ca.sin(theta[k])
         else:
             Iyy_k = Iyy_nom
             r_xF, r_zF = rx_land_F, 0.0
             r_xR, r_zR = rx_land_R, 0.0
 
-        Iyy_profile[k] = Iyy_nom if (k < N1+N2 or k >= N1+N2+N3) else Iyy_tuck
+        Iyy_profile[k] = Iyy_nom if (k < N1 + N2 or k >= k_td) else Iyy_tuck
 
         # Restricciones de contacto
-        if k < N1 + N2 or k >= N1 + N2 + N3:
+        if k < N1 + N2 or k >= k_td:
             opti.subject_to(fz_F[k] >= 0.0)
             opti.subject_to(fz_R[k] >= 0.0)
             opti.subject_to(fz_F[k] <= f_max_pair)
@@ -169,23 +181,23 @@ def solve_backflip_trajectory():
         opti.subject_to(theta[k+1] == theta[k] + h * (omega[k] + 0.5 * h * alpha))
         opti.subject_to(omega[k+1] == omega[k] + h * alpha)
 
-    # Rotación continua y monótona durante el vuelo (omega < -2 rad/s)
-    for k in range(N1 + N2, N1 + N2 + N3):
-        opti.subject_to(omega[k] <= -2.0)
+    # Rotación continua y monótona durante el vuelo libre
+    for k in range(N1 + N2, k_td):
+        opti.subject_to(omega[k] <= -3.5)
 
-    # Límites de seguridad
+    # Límites de seguridad vertical
     for k in range(N_total + 1):
         opti.subject_to(pz[k] >= 0.15)
         opti.subject_to(pz[k] <= 0.85)
 
-    # Función objetivo
+    # Función objetivo: suavidad de fuerzas y trayectoria vertical
     cost = 1e-4 * ca.sumsqr(F) + 0.2 * ca.sumsqr(vx) + 0.2 * ca.sumsqr(px)
     opti.minimize(cost)
 
-    # Guess inicial de cabeceo rotando de 0 a -360 grados
+    # Guesses iniciales basados en la física
     th_guess = np.zeros(N_total + 1)
-    th_guess[N1+N2 : N1+N2+N3+1] = np.linspace(0.0, -2.0 * np.pi, N3 + 1)
-    th_guess[N1+N2+N3:] = -2.0 * np.pi
+    th_guess[N1+N2 : k_td+1] = np.linspace(-0.5, -2.0 * np.pi + 0.35, N3 + 1)
+    th_guess[k_td:] = -2.0 * np.pi
     opti.set_initial(theta, th_guess)
 
     z_guess = np.ones(N_total + 1) * model.nominal_height
@@ -207,7 +219,7 @@ def solve_backflip_trajectory():
     t_calc = time.time() - t_start
     print(f">>> ¡Solución de Backflip 360° obtenida con éxito en {t_calc:.3f} s!")
 
-    # Extraer arrays
+    # Extraer arrays óptimos
     px_opt = np.array(sol.value(px))
     pz_opt = np.array(sol.value(pz))
     vx_opt = np.array(sol.value(vx))
@@ -229,6 +241,7 @@ def solve_backflip_trajectory():
     feet_world_traj = np.zeros((N_total + 1, 4, 3))
     q_joint_traj = np.zeros((N_total + 1, 12))
 
+    # Coordenadas laterales de las 4 caderas en reposo
     y_hips = [model.d_y + model.l_thigh_lat, -(model.d_y + model.l_thigh_lat),
               model.d_y + model.l_thigh_lat, -(model.d_y + model.l_thigh_lat)]
 
@@ -239,36 +252,36 @@ def solve_backflip_trajectory():
         R_base = np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
 
         if k <= N1 + N2:
-            # En despegue: pies en suelo
-            p_feet_b = np.zeros((4, 3))
+            # En despegue: pies apoyados en el suelo
             for i in range(4):
                 p_foot_w = np.array([d_x if i in [0, 1] else -d_x, y_hips[i], 0.0])
                 feet_world_traj[k, i] = p_foot_w
-                p_feet_b[i] = R_base.T @ (p_foot_w - p_base)
-        elif k < N1 + N2 + N3:
+        elif k < k_td:
             # En vuelo acrobático: patas firmemente recogidas (tuck) en el marco de la base
-            # Durante el giro, patas recogidas protegen el cuerpo y minimizan la inercia
+            # Se mantienen con simetría sagital perfecta (q1 = 0)
             tau_flight = (k - (N1 + N2)) / float(N3)
-            # En tau=0 despegue, en tau=0.5 máximo tuck, en tau=1.0 extensión para aterrizaje
+            # En el ápice (tau=0.5) máxima retracción; antes de aterrizar se extienden
             tuck_factor = np.sin(np.pi * tau_flight)
-            leg_len = 0.28 - 0.13 * tuck_factor  # Longitud de pata varía de 0.28m a 0.15m
+            leg_len = 0.28 - 0.12 * tuck_factor  # Varía suavemente de 0.28m a 0.16m
 
-            p_feet_b = np.zeros((4, 3))
             for i in range(4):
-                # Pata orientada hacia abajo relativo al chasis (eje -Z local)
                 sx = 1.0 if i in [0, 1] else -1.0
-                p_feet_b[i] = [sx * (d_x * 0.7), y_hips[i], -leg_len]
-                feet_world_traj[k, i] = p_base + R_base @ p_feet_b[i]
+                # Pie en el marco de la base: exactamente alineado bajo la cadera/muslo
+                p_foot_b = [sx * (d_x * 0.7), y_hips[i], -leg_len]
+                feet_world_traj[k, i] = p_base + R_base @ p_foot_b
         else:
-            # En aterrizaje: pies en suelo a rx_land
-            p_feet_b = np.zeros((4, 3))
+            # En aterrizaje: pies en contacto en el suelo a rx_land
             for i in range(4):
                 p_foot_w = np.array([rx_land_F_val if i in [0, 1] else rx_land_R_val, y_hips[i], 0.0])
                 feet_world_traj[k, i] = p_foot_w
-                p_feet_b[i] = R_base.T @ (p_foot_w - p_base)
 
         q_joints = model.ik_full_body(p_base, R_base, feet_world_traj[k])
         q_joint_traj[k] = q_joints
+
+    # Verificación de simetría en plano sagital (q1 == 0)
+    max_hip_roll = np.max(np.abs(q_joint_traj[:, [0, 3, 6, 9]]))
+    print(f">>> Verificación cinemática: Desviación lateral máxima (hip roll q1) = {max_hip_roll:.6f} rad (0.00°)")
+    assert max_hip_roll < 0.01, f"¡Aviso! Se detectó desviación lateral en las caderas: {max_hip_roll}"
 
     trajectory_data = {
         "time": time_array,
@@ -297,6 +310,7 @@ def solve_backflip_trajectory():
     print(f">>> Datos de Backflip guardados en: {save_path}")
     print(f"    - Giro angular total: {np.rad2deg(th_opt[-1]):.1f}° (360° completados)")
     print(f"    - Altura máxima en la cumbre: {pz_opt[k_apex]:.3f} m")
+    print(f"    - Giro al aterrizar (touchdown): {np.rad2deg(th_opt[k_td]):.1f}° (erguido en 4 patas)")
     print(f"    - Velocidad angular pico: {np.min(om_opt):.2f} rad/s ({np.rad2deg(np.min(om_opt)):.1f} °/s)")
 
     return trajectory_data

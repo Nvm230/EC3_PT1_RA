@@ -149,14 +149,17 @@ Horizonte total $T = 1.05\text{ s}$ discretizado en 4 fases:
 | Métrica / Parámetro | Problema 1: Salto de Obstáculo Alto | Problema 2: Backflip Acrobático 360° |
 |---|---|---|
 | **Modelo Dinámico** | SRBM Sagital + Fases de Contacto | SRBM No Lineal + Momento Angular $L_y$ |
-| **Tiempo Total de Maniobra ($T$)** | $1.05\text{ s}$ | $1.04\text{ s}$ |
-| **Tiempo de Vuelo ($T_{\text{flight}}$)** | $0.54\text{ s}$ | $0.48\text{ s}$ |
-| **Desplazamiento $\Delta X$** | $+1.150\text{ m}$ (salto hacia adelante) | $+0.045\text{ m}$ (aterrizaje en sitio) |
-| **Altura Máxima ($Z_{\text{apex}}$)** | $0.665\text{ m}$ ($+40.5\text{ cm}$ sobre obstáculo) | $0.717\text{ m}$ (inversión a $-180^\circ$) |
+| **Tiempo Total de Maniobra ($T$)** | $0.95\text{ s}$ | $1.07\text{ s}$ |
+| **Tiempo de Vuelo ($T_{\text{flight}}$)** | $0.45\text{ s}$ | $0.56\text{ s}$ |
+| **Desplazamiento $\Delta X$** | $+0.992\text{ m}$ (salto hacia adelante) | $+0.042\text{ m}$ (aterrizaje en sitio) |
+| **Altura Máxima ($Z_{\text{apex}}$)** | $0.665\text{ m}$ ($+40.5\text{ cm}$ sobre obstáculo) | $0.845\text{ m}$ (inversión a $-187.2^\circ$) |
 | **Rotación de Cabeceo ($\Delta \theta$)** | $0.0^\circ$ (horizontal estable) | **$-360.0^\circ$ (rotación completa)** |
-| **Velocidad Angular Pico ($\omega$)** | $0.21\text{ rad/s}$ | **$-9.11\text{ rad/s}$ ($-521.9^\circ/\text{s}$)** |
-| **Tiempo de Solución IPOPT** | **0.091 s** | **0.125 s** |
+| **Giro en el Aire al Contacto (Touchdown)** | N/A | **$-335.0^\circ$ (erguido en 4 patas)** |
+| **Desviación Lateral de Cadera ($q_1$)** | $0.00^\circ$ (sagital puro) | **$0.000^\circ$ (simetría sagital perfecta)** |
+| **Velocidad Angular Pico ($\omega$)** | $0.21\text{ rad/s}$ | **$-9.51\text{ rad/s}$ ($-545.1^\circ/\text{s}$)** |
+| **Tiempo de Solución IPOPT** | **0.090 s** | **0.136 s** |
 | **Colisiones Físicas con Obstáculo** | **0 contactos (100% libre de colisión)** | N/A (espacio aéreo libre) |
+| **Animación / Exportación de Medios** | 80 frames @ 25 FPS (3.2s slow-mo) + pausa | 85 frames @ 25 FPS (3.4s slow-mo) + pausa |
 | **Estado del Optimizador** | `Solve_Succeeded` | `Solve_Succeeded` |
 
 ---
@@ -165,4 +168,5 @@ Horizonte total $T = 1.05\text{ s}$ discretizado en 4 fases:
 
 1. **Factibilidad y Límites del Salto:** Se justificó analíticamente por qué un obstáculo de $26\text{ cm}$ resulta infranqueable mediante marcha convencional (vientre a $18\text{ cm}$, paso de marcha $\le 8\text{ cm}$) y se demostró que está en la zona óptima de la envolvente de potencia de Unitree A1 ($\tau_{\max} = 33.5\text{ N}\cdot\text{m}$, aceleración vertical $\approx 6g$).
 2. **Eliminación Total de Penetración/Colisión:** Al estructurar la cinemática de las patas directamente en el marco del cuerpo durante el vuelo (*tucking* a $15\text{ cm}$ del chasis) y sincronizar el despegue antes de la barrera y el aterrizaje post-obstáculo, la simulación física en PyBullet registró exactamente **0 contactos de colisión**.
-3. **Alto Contraste y Dinámica Activa:** El obstáculo en grafito oscuro con franja de advertencia en amarillo industrial y el robot en acabado titanio con articulaciones blancas permiten una visualización nítida y profesional. La dinámica física en PyBullet se ejecutó a 240 Hz con `useFixedBase=False` y control PD continuo.
+3. **Perfeccionamiento del Backflip y Eliminación de Cruces Articulares:** Al exigir que la rotación se complete casi en su totalidad durante el vuelo libre (alcanzando $-335^\circ$ antes del touchdown), las patas tocan el suelo orientadas verticalmente hacia abajo. Esto eliminó por completo las singularidades cinemáticas inversas, garantizando un ángulo de balanceo de cadera $q_1 \equiv 0.00^\circ$ en todo momento, suprimiendo cualquier apertura o cruce en "X" de las patas.
+4. **Cinemática Lenta (Slow-Motion) y Alto Contraste:** Para evitar la percepción de movimientos excesivamente rápidos en animaciones cortas de 1 segundo, la exportación de video y GIF se parametrizó a cámara cinematográfica (25 FPS con 80-85 fotogramas interpolados, ~3.3 segundos de duración) complementada con una pausa de 0.6 segundos en reposo al aterrizar, permitiendo la apreciación nítida de cada fase dinámica.

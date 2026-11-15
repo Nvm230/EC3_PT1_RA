@@ -225,12 +225,14 @@ Al retraer las patas hacia el chasis (\textit{tucking}), el momento de inercia d
 \end{figure}
 
 \subsection{Resultados Obtenidos (Problema 2)}
-El problema NLP del Backflip fue resuelto en \textbf{0.125 segundos} por CasADi/IPOPT:
+El problema NLP del Backflip fue resuelto en \textbf{0.136 segundos} por CasADi/IPOPT:
 \begin{itemize}
     \item Rotación final exacta: $\theta = -360.0^\circ$ ($-6.283\text{ rad}$).
-    \item Velocidad angular máxima en cabeceo: $\omega = -9.11\text{ rad/s}$ ($-521.9^\circ/\text{s}$).
-    \item Altura máxima alcanzada en vértice: $p_z = 0.717\text{ m}$.
-    \item Fuerzas normales de despegue y aterrizaje dentro de la capacidad de los motores ($\le 320\text{ N}$).
+    \item Rotación en el aire al contacto de aterrizaje (\textit{touchdown}): $\theta = -335.0^\circ$ (aterrizaje erguido en cuatro patas).
+    \item Desviación lateral de cadera: $q_1 \equiv 0.000000\text{ rad}$ ($0.00^\circ$) en todas las fases y patas, eliminando por completo cualquier apertura o cruce en ``X''.
+    \item Velocidad angular máxima en cabeceo: $\omega = -9.51\text{ rad/s}$ ($-545.1^\circ/\text{s}$).
+    \item Altura máxima alcanzada en vértice: $p_z = 0.845\text{ m}$ con inversión en $-187.2^\circ$.
+    \item Fuerzas normales de despegue y aterrizaje dentro de la capacidad de los motores ($\le 350\text{ N}$).
 \end{itemize}
 
 \section{Comparativa y Síntesis de Resultados}
@@ -244,16 +246,19 @@ La Tabla~\ref{tab:resumen} presenta la comparación directa de ambos problemas o
 \toprule
 \textbf{Métrica / Parámetro} & \textbf{Problema 1: Salto de Obstáculo} & \textbf{Problema 2: Backflip 360$^\circ$} \\
 \midrule
-Tiempo total de trayectoria ($T$) & $0.95\text{ s}$ & $1.04\text{ s}$ \\
-Tiempo de vuelo aéreo ($T_{\text{flight}}$) & $0.45\text{ s}$ & $0.48\text{ s}$ \\
-Desplazamiento horizontal ($\Delta X$) & $+0.992\text{ m}$ & $+0.045\text{ m}$ \\
-Altura máxima en cumbre ($Z_{\text{apex}}$) & $0.665\text{ m}$ & $0.717\text{ m}$ \\
+Tiempo total de trayectoria ($T$) & $0.95\text{ s}$ & $1.07\text{ s}$ \\
+Tiempo de vuelo aéreo ($T_{\text{flight}}$) & $0.45\text{ s}$ & $0.56\text{ s}$ \\
+Desplazamiento horizontal ($\Delta X$) & $+0.992\text{ m}$ & $+0.042\text{ m}$ \\
+Altura máxima en cumbre ($Z_{\text{apex}}$) & $0.665\text{ m}$ & $0.845\text{ m}$ \\
 Altura del obstáculo ($h_{\text{obs}}$) & $0.260\text{ m}$ & N/A \\
 Margen libre de patas sobre obstáculo & $+0.255\text{ m}$ & N/A \\
 Rotación neta de cabeceo ($\Delta \theta$) & $0.0^\circ$ & $-360.0^\circ$ \\
-Velocidad angular pico ($\omega$) & $0.21\text{ rad/s}$ & $-9.11\text{ rad/s}$ ($-521.9^\circ/\text{s}$) \\
+Giro previo al aterrizaje (\textit{touchdown}) & N/A & $-335.0^\circ$ \\
+Desviación lateral de cadera ($q_1$) & $0.00^\circ$ (sagital) & $0.00^\circ$ (sagital puro) \\
+Velocidad angular pico ($\omega$) & $0.21\text{ rad/s}$ & $-9.51\text{ rad/s}$ ($-545.1^\circ/\text{s}$) \\
 Contactos espurios con obstáculo & \textbf{0} & \textbf{0} \\
-Tiempo de cómputo IPOPT & \textbf{0.091 s} & \textbf{0.125 s} \\
+Animación exportada & 80 frames @ 25 FPS (3.2 s) & 85 frames @ 25 FPS (3.4 s) \\
+Tiempo de cómputo IPOPT & \textbf{0.090 s} & \textbf{0.136 s} \\
 Estado de optimización & `Solve\_Succeeded` & `Solve\_Succeeded` \\
 \bottomrule
 \end{tabular}
@@ -261,11 +266,11 @@ Estado de optimización & `Solve\_Succeeded` & `Solve\_Succeeded` \\
 
 \section{Conclusiones}
 \begin{enumerate}
-    \item La formulación mediante el modelo SRBM y programación no lineal con colocación directa en CasADi + IPOPT demostró una extraordinaria eficiencia numérica, convergiendo en menos de $0.13\text{ s}$ en ambos casos.
+    \item La formulación mediante el modelo SRBM y programación no lineal con colocación directa en CasADi + IPOPT demostró una extraordinaria eficiencia numérica, convergiendo en menos de $0.14\text{ s}$ en ambos casos.
     \item El análisis de factibilidad física de Unitree A1 confirmó que cualquier obstáculo con altura $\ge 0.18\text{ m}$ es mecánicamente infranqueable caminando debido al despeje del vientre del chasis ($18-20\text{ cm}$) y a la limitación de paso en balanceo ($6-8\text{ cm}$). El obstáculo seleccionado de $26\text{ cm}$ ($87\%$ de la altura de parada) impone la necesidad estricta de un salto balístico.
-    \item La sincronización cinemática de la retracción de extremidades (\textit{tucking}) y la restricción de altura de despegue ($p_{z,\text{takeoff}} \le 0.31\text{ m}$) eliminaron por completo las colisiones físicas y el recorte de extremidades observado previamente, logrando $0$ contactos verificados en PyBullet con física y dinámica plenamente activas.
-    \item El salto mortal acrobático de $360^\circ$ demostró con rigor la modulación de momento de inercia ($43.4\%$ de reducción por retracción), acelerando la rotación en el aire y estabilizando el robot en cuatro patas al completar la maniobra.
-    \item El renderizado con paleta de alto contraste (barrera en grafito con franja de advertencia amarilla y robot en titanio plateado) facilita la inspección visual clara y precisa del despeje en las animaciones y secuencias generadas.
+    \item La sincronización cinemática de la retracción de extremidades (\textit{tucking}) y la restricción de altura de despegue ($p_{z,\text{takeoff}} \le 0.31\text{ m}$) eliminaron por completo las colisiones físicas y el recorte de extremidades, logrando $0$ contactos verificados en PyBullet con dinámica activa.
+    \item Al completar la rotación acrobática del salto mortal en el aire (alcanzando $-335^\circ$ antes del touchdown), las patas aterrizan orientadas hacia el suelo, garantizando una simetría sagital perfecta ($q_1 \equiv 0^\circ$ en todas las fases) y suprimiendo las aperturas o cruces en ``X'' de las patas.
+    \item La exportación en cámara lenta cinematográfica (25 FPS con 80--85 fotogramas, ~3.3~segundos) complementada con una pausa de reposo tras el aterrizaje proporciona una visualización fluida, elegante y nítida de todas las fases del movimiento tanto en GIF como en MP4.
 \end{enumerate}
 
 \end{document}

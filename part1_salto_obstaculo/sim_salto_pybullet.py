@@ -81,24 +81,24 @@ def create_obstacle_with_hazard_trim(x_min, x_max, height=0.25, width=0.85):
 def style_robot_high_contrast(robot_id):
     """Aplica colores diferenciados a chasis y patas para máxima nitidez visual."""
     # Chasis: Titanio / Gris metálico azulado
-    p.changeVisualShape(robot_id, -1, rgbaColor=[0.32, 0.38, 0.45, 1.0], specularColor=[0.5, 0.5, 0.5])
+    p.changeVisualShape(robot_id, -1, rgbaColor=[0.35, 0.42, 0.50, 1.0], specularColor=[0.6, 0.6, 0.6], textureUniqueId=-1)
     
     num_joints = p.getNumJoints(robot_id)
     for j in range(num_joints):
         info = p.getJointInfo(robot_id, j)
         name = info[1].decode("utf-8").lower()
-        if "hip" in name:
-            # Articulación de cadera: Blanco ártico
-            p.changeVisualShape(robot_id, j, rgbaColor=[0.92, 0.94, 0.96, 1.0])
+        if "hip" in name or "shoulder" in name:
+            # Articulación de cadera: Blanco brillante
+            p.changeVisualShape(robot_id, j, rgbaColor=[0.95, 0.95, 0.98, 1.0], textureUniqueId=-1)
         elif "thigh" in name:
             # Muslo: Antracita oscura
-            p.changeVisualShape(robot_id, j, rgbaColor=[0.22, 0.25, 0.28, 1.0])
+            p.changeVisualShape(robot_id, j, rgbaColor=[0.22, 0.25, 0.28, 1.0], textureUniqueId=-1)
         elif "calf" in name:
             # Pantorrilla: Grafito
-            p.changeVisualShape(robot_id, j, rgbaColor=[0.16, 0.18, 0.20, 1.0])
+            p.changeVisualShape(robot_id, j, rgbaColor=[0.16, 0.18, 0.20, 1.0], textureUniqueId=-1)
         elif "foot" in name:
             # Pies de goma: Negro azabache
-            p.changeVisualShape(robot_id, j, rgbaColor=[0.08, 0.08, 0.10, 1.0])
+            p.changeVisualShape(robot_id, j, rgbaColor=[0.08, 0.08, 0.10, 1.0], textureUniqueId=-1)
 
 
 def run_simulation(gui=False, save_media=True):
@@ -158,10 +158,9 @@ def run_simulation(gui=False, save_media=True):
     view_matrix = p.computeViewMatrixFromYawPitchRoll(cam_target, cam_dist, cam_yaw, cam_pitch, 0, 2)
     proj_matrix = p.computeProjectionMatrixFOV(fov=60.0, aspect=1024/768, nearVal=0.1, farVal=100.0)
 
-    # Interpolación a 50 FPS para renderizado continuo
-    fps = 50
+    # Discretización para animación fluida a cámara cinematográfica (slow-motion)
+    n_frames = 65
     t_total = time_arr[-1]
-    n_frames = int(t_total * fps)
     t_interp = np.linspace(0, t_total, n_frames)
 
     px_interp = np.interp(t_interp, time_arr, px)
@@ -182,7 +181,7 @@ def run_simulation(gui=False, save_media=True):
         int(n_frames * 0.12),  # Agache
         int(n_frames * 0.28),  # Despegue
         int(n_frames * 0.54),  # Vértice sobre el obstáculo
-        int(n_frames * 0.92)   # Aterrizaje
+        int(n_frames * 0.94)   # Aterrizaje
     ]
     keyframe_labels = [
         "1. Fase Agache / Compresion (z = 0.18 m)",
@@ -266,12 +265,15 @@ def run_simulation(gui=False, save_media=True):
         gif_path = os.path.join(output_dir, "p1_salto_obstaculo.gif")
         mp4_path = os.path.join(output_dir, "p1_salto_obstaculo.mp4")
 
-        print(f">>> Guardando GIF animado en: {gif_path}")
-        imageio.mimsave(gif_path, [np.array(img) for img in captured_frames[::2]], fps=25)
+        # Añadir pausa de 15 fotogramas (~0.6 s) con pose final estable
+        extended_frames = captured_frames + [captured_frames[-1]] * 15
+
+        print(f">>> Guardando GIF animado ({len(extended_frames)} frames a 25 FPS): {gif_path}")
+        imageio.mimsave(gif_path, [np.array(img) for img in extended_frames], fps=25)
 
         print(f">>> Guardando video MP4 en: {mp4_path}")
         try:
-            imageio.mimsave(mp4_path, [np.array(img) for img in captured_frames], fps=50)
+            imageio.mimsave(mp4_path, [np.array(img) for img in extended_frames], fps=25)
         except Exception as e:
             print(f"Aviso MP4: {e}")
 
