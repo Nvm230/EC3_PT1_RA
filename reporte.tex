@@ -96,7 +96,7 @@ El vértice balístico resultante sobre la altura de despegue es:
 \Delta z_{\text{apex}} = \frac{v_{z,\text{takeoff}}^2}{2 g} \approx \frac{2.68^2}{19.62} \approx 0.366\text{ m} \implies z_{\text{apex}} \approx 0.30 + 0.37 = 0.67\text{ m}
 \end{equation}
 
-\subsection{Selección del Obstáculo: $h_{\text{obs}} = 0.26\text{ m}$}
+\subsection{Selección del Obstáculo: \texorpdfstring{$h_{\text{obs}} = 0.26\text{ m}$}{h = 0.26 m}}
 Un obstáculo de $26\text{ cm}$ ($260\text{ mm}$):
 \begin{itemize}
     \item Representa el \textbf{$87\%$ de la altura nominal de parada del robot} ($30\text{ cm}$).
@@ -139,43 +139,107 @@ Esto proporciona una precisión analítica de $\sim 10^{-17}\text{ m}$ sin reque
 
 \section{Problema 1: Salto sobre Obstáculo Alto}
 \subsection{Estructuración por Fases de la Colocación Directa}
-El obstáculo rígido se ubica en $x \in [0.52, 0.64]\text{ m}$ con altura $h_{\text{obs}} = 0.26\text{ m}$. El movimiento se divide en 4 fases temporales:
+El obstáculo rígido se ubica en $x \in [0.52, 0.64]\text{ m}$ con altura $h_{\text{obs}} = 0.26\text{ m}$. El movimiento se divide en 4 fases temporales acopladas mediante programación no lineal:
 \begin{enumerate}
-    \item \textbf{Fase 1: Agache Preparatorio ($T_1 = 0.15\text{ s}$):} El CoM desciende de $0.30\text{ m}$ a $0.18\text{ m}$ acumulando carrera vertical.
-    \item \textbf{Fase 2: Impulso Explosivo ($T_2 = 0.15\text{ s}$):} Fuerzas verticales de hasta $F_z \approx 280\text{ N}$ aceleran el robot hasta $v_z = 2.66\text{ m/s}$ y $v_x = 1.71\text{ m/s}$ en $x = 0.12\text{ m}$, manteniendo la altura de despegue en $p_{z,\text{takeoff}} \le 0.31\text{ m}$ para evitar la saturación cinemática de las patas traseras.
-    \item \textbf{Fase 3: Vuelo Balístico y Retracción de Patas ($T_3 = 0.45\text{ s}$):} Fuerzas nulas ($\mathbf{f} = \mathbf{0}$). El CoM asciende en parábola gravitatoria alcanzando la cumbre en $z_{\text{apex}} = 0.665\text{ m}$ directamente sobre el obstáculo ($x = 0.58\text{ m}$). Las patas se repliegan activamente a $L_{\text{leg}} = 0.15\text{ m}$, garantizando una altura de patas $z_{\text{foot}} \ge 0.515\text{ m}$ ($+25.5\text{ cm}$ sobre la barrera).
-    \item \textbf{Fase 4: Aterrizaje y Amortiguación ($T_4 = 0.20\text{ s}$):} Las patas se extienden únicamente después de que las caderas traseras superan el límite del obstáculo ($x > 0.64\text{ m}$), haciendo contacto con el suelo en $x = 0.992\text{ m}$ y absorbiendo la energía cinética hasta el reposo total.
+    \item \textbf{Fase 1: Agache Preparatorio ($T_1 = 0.15\text{ s}$):} El CoM desciende de $0.30\text{ m}$ a $0.18\text{ m}$ acumulando carrera vertical ($\Delta z = 12\text{ cm}$) para cargar el empuje sin despegar los pies del suelo.
+    \item \textbf{Fase 2: Impulso Explosivo ($T_2 = 0.12\text{ s}$):} Fuerzas normales de empuje aceleran el robot hasta alcanzar $v_z = 2.66\text{ m/s}$ y $v_x = 1.71\text{ m/s}$ en $x = 0.121\text{ m}$. Se impone la cota $p_{z,\text{takeoff}} \le 0.31\text{ m}$ en el instante de despegue para garantizar que las patas traseras mantengan contacto sin entrar en singularidad cinemática.
+    \item \textbf{Fase 3: Vuelo Balístico y Retracción de Patas ($T_3 = 0.54\text{ s}$):} Todas las fuerzas de contacto se anulan rigurosamente ($\mathbf{f}_i = \mathbf{0}$). El CoM describe una trayectoria parabólica pura alcanzando su vértice cenital en $z_{\text{apex}} = 0.665\text{ m}$ sobre el obstáculo ($x = 0.583\text{ m}$). Las extremidades se repliegan activamente (\textit{tucking}) hacia el chasis a una longitud virtual de $0.15\text{ m}$, elevando la posición vertical de los cuatro pies a $z_{\text{foot}} \ge 0.515\text{ m}$ ($+25.5\text{ cm}$ de holgura limpia sobre el obstáculo).
+    \item \textbf{Fase 4: Aterrizaje y Amortiguación ($T_4 = 0.24\text{ s}$):} Las patas se extienden únicamente después de que el chasis supera por completo la arista final de la barrera ($x > 0.64\text{ m}$), contactando el suelo en $x = 0.992\text{ m}$ y disipando la energía cinética residual hasta el reposo total en $x = 1.15\text{ m}$.
 \end{enumerate}
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{outputs/p1_trayectoria_salto.png}
-\caption{Plano sagital ($X, Z$) del salto de obstáculo alto (26~cm) mostrando la superación aérea limpia del CoM y de las cuatro patas.}
+\includegraphics[width=0.94\textwidth]{outputs/p1_trayectoria_salto.png}
+\caption{Cinemática del salto sobre obstáculo alto: (Arriba) Plano sagital $X-Z$ con perfil parabólico del CoM y órbitas aéreas de las patas; (Centro) Evolución temporal de posición horizontal y vertical; (Abajo) Velocidades lineales en las 4 fases.}
 \label{fig:p1_traj}
 \end{figure}
 
+\subsection{Análisis Detallado de la Cinemática Espacial y Temporal (Figura~\ref{fig:p1_traj})}
+La Figura~\ref{fig:p1_traj} sintetiza la cinemática de traslación del cuadrúpedo a través de tres subgráficas interconectadas:
+
+\begin{enumerate}
+    \item \textbf{Subgráfica 1 -- Plano Sagital Espacial ($X$ vs $Z$):}
+    \begin{itemize}
+        \item \textbf{Ejes:} El eje de abscisas representa la coordenada longitudinal horizontal $X$ [m] y el eje de ordenadas la cota vertical de altura $Z$ [m], con límites configurados entre $-0.15\text{ m}$ y $1.35\text{ m}$ en $X$, y entre $-0.04\text{ m}$ y $0.98\text{ m}$ en $Z$, permitiendo una visualización desahogada.
+        \item \textbf{Suelo y Obstáculo:} La línea horizontal negra en $z = 0$ define la superficie rígida de apoyo. El obstáculo físico se representa como un bloque rectangular grafito de $12\text{ cm}$ de base ($x \in [0.52, 0.64]\text{ m}$) y $26\text{ cm}$ de altura ($h_{\text{obs}} = 0.26\text{ m}$), con una franja de advertencia amarilla en su arista superior.
+        \item \textbf{Trayectoria del Centro de Masa (Curva azul continua):} Inicia en reposo en $(0.0, 0.30)\text{ m}$, desciende verticalmente hasta $z = 0.18\text{ m}$ en la compresión preparatoria, despega en $(0.121, 0.309)\text{ m}$ y describe una parábola balística de gravedad libre que corona en el vértice $(x = 0.583\text{ m}, z = 0.665\text{ m})$, confiriendo un margen vertical libre de CoM de $+40.5\text{ cm}$ respecto al obstáculo. Tras sobrevolar la barrera, aterriza en $x = 1.15\text{ m}$.
+        \item \textbf{Órbitas Aéreas de Extremidades (Curvas discontinuas verde y morada):} La curva verde discontinua traza la posición sagital de las patas delanteras (FL/FR) y la curva morada la de las patas traseras (RL/RR) durante el vuelo libre. Ambas muestran la retracción activa simultánea hacia el cuerpo, manteniendo los pies por encima de $z \ge 0.515\text{ m}$ durante el paso cenital, lo que garantiza un despeje neto de patas de $+25.5\text{ cm}$ ($255\text{ mm}$ de holgura limpia).
+        \item \textbf{Puntos de Contacto:} Los círculos anaranjados marcan los apoyos de despegue previos al obstáculo ($x < 0.20\text{ m}$), mientras que los cuadrados azules señalan las zonas seguras de contacto en el aterrizaje ($x > 0.90\text{ m}$), verificando que las patas traseras hacen contacto $35.2\text{ cm}$ después del obstáculo.
+    \end{itemize}
+
+    \item \textbf{Subgráfica 2 -- Evolución Temporal de Posición ($p_x(t), p_z(t)$):}
+    \begin{itemize}
+        \item \textbf{Eje Temporal:} Muestra la escala temporal $t \in [0.0, 1.05]\text{ s}$, dividida mediante líneas punteadas grises y etiquetas identificativas en las 4 fases: Compresión ($0.0 - 0.15\text{ s}$), Impulso ($0.15 - 0.27\text{ s}$), Vuelo Aéreo ($0.27 - 0.81\text{ s}$) y Aterrizaje ($0.81 - 1.05\text{ s}$).
+        \item \textbf{Avance Longitudinal $p_x(t)$ (Curva azul marino):} Se mantiene nulo durante el agache ($x = 0$), crece durante el impulso propulsivo y mantiene un crecimiento con pendiente constante durante el vuelo, disipando su inercia en el suelo hasta estacionarse en reposo en $x = 1.15\text{ m}$.
+        \item \textbf{Altura Vertical $p_z(t)$ (Curva verde azulado):} Desciende de $0.30\text{ m}$ a $0.18\text{ m}$ en compresión, se eleva velozmente en el impulso, alcanza su cénit de $0.665\text{ m}$ a mitad del vuelo ($t \approx 0.54\text{ s}$) y concluye asentándose en la altura nominal de parada ($0.30\text{ m}$).
+        \item \textbf{Línea de Referencia del Obstáculo (Roja punteada):} Señalizada en $z = 0.26\text{ m}$, evidenciando cuantitativamente que el CoM y las patas sobrepasan ampliamente la cota de la barrera durante todo el intervalo de cruce.
+    \end{itemize}
+
+    \item \textbf{Subgráfica 3 -- Evolución Temporal de Velocidad ($v_x(t), v_z(t)$):}
+    \begin{itemize}
+        \item \textbf{Velocidad Longitudinal $v_x(t)$ (Curva azul segmentada):} Aumenta desde cero hasta la velocidad de despegue $v_{x,\text{takeoff}} = 1.71\text{ m/s}$ y se conserva rigurosamente constante durante los $0.54\text{ s}$ de vuelo libre ($\dot{v}_x = 0$), validando la ausencia de fuerzas horizontales externas en el aire según las leyes de Newton. En el impacto de aterrizaje se reduce progresivamente hasta $0\text{ m/s}$.
+        \item \textbf{Velocidad Vertical $v_z(t)$ (Curva cian segmentada):} Pasa de valores negativos en el agache a un valor positivo máximo de $v_{z,\text{takeoff}} = +2.66\text{ m/s}$ al momento exacto del despegue ($t = 0.27\text{ s}$). Durante el vuelo aéreo, decrece con una pendiente negativa de aceleración exactamente igual a $-9.81\text{ m/s}^2$ (gravedad estándar), cruzando por cero ($v_z = 0$) en la cumbre del salto y alcanzando $-2.66\text{ m/s}$ justo antes del contacto en tierra, donde los amortiguadores articulares la frenan suavemente a cero.
+    \end{itemize}
+\end{enumerate}
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{outputs/p1_fuerzas_grf.png}
-\caption{Fuerzas de reacción del suelo ($F_z, F_x$) y conos de fricción en las 4 fases del salto.}
+\includegraphics[width=0.94\textwidth]{outputs/p1_fuerzas_grf.png}
+\caption{Fuerzas de reacción del suelo (GRF) y dinámica de estabilidad: (Arriba) Fuerzas normales verticales $F_z$ y comparación con el peso estático; (Centro) Fuerzas tangenciales $F_x$ y límites de fricción de Coulomb ($\pm \mu F_z$); (Abajo) Ángulo de cabeceo $\theta(t)$ y velocidad angular $\omega_y(t)$ en doble escala.}
 \label{fig:p1_forces}
 \end{figure}
 
+\subsection{Análisis de Fuerzas de Contacto GRF, Fricción y Estabilidad (Figura~\ref{fig:p1_forces})}
+La Figura~\ref{fig:p1_forces} valida la viabilidad física del salto garantizando que las fuerzas ejercidas respeten las restricciones de unilateralidad, adherencia y equilibrio rotacional:
+
+\begin{enumerate}
+    \item \textbf{Fuerzas Normales Verticales $F_z$ (Subgráfica Superior):}
+    \begin{itemize}
+        \item La curva azul representa la fuerza normal ejercida por el par de patas frontales ($F_{z,F}$), la curva morada la del par trasero ($F_{z,R}$), y la curva discontinua negra la fuerza normal total ($F_{z,\text{total}} = F_{z,F} + F_{z,R}$).
+        \item La línea horizontal punteada roja marca el peso estático del robot ($W = mg = 117.7\text{ N}$).
+        \item Durante el impulso preparatorio ($t \in [0.15, 0.27]\text{ s}$), la fuerza vertical total alcanza un pico de $485\text{ N}$ (un factor de carga dinámico de $4.1g$), con una contribución preponderante de las patas traseras ($280\text{ N}$) para propeler el robot longitudinalmente hacia adelante.
+        \item Durante toda la fase de vuelo balístico ($t \in [0.27, 0.81]\text{ s}$), todas las componentes se anulan idénticamente a $0.00\text{ N}$, certificando el despegue absoluto.
+        \item En el aterrizaje ($t \ge 0.81\text{ s}$), se presenta un pico amortiguado de absorción de impacto de $590\text{ N}$ ($4.9g$) distribuido armónicamente entre las cuatro extremidades, disipando la energía sin provocar rebotes ni fuerzas destructivas en los reductores.
+    \end{itemize}
+
+    \item \textbf{Fuerzas Tangenciales $F_x$ y Conos de Fricción de Coulomb (Subgráfica Central):}
+    \begin{itemize}
+        \item Las curvas sólida azul ($F_{x,F}$) y morada ($F_{x,R}$) trazan las fuerzas de tracción horizontal requeridas para impulsar y frenar el robot.
+        \item La envolvente punteada naranja delimita la frontera del cono de fricción estática de Coulomb, calculada como $\pm \mu F_{z,\text{total}}$ con un coeficiente conservador de $\mu = 0.70$.
+        \item Se comprueba visualmente que las fuerzas de fricción demandadas se sitúan en todo momento dentro del interior del cono ($|F_{x,i}| < \mu F_{z,i}$), sin alcanzar nunca la saturación. Esto garantiza formalmente la ausencia de deslizamiento o resbalamiento de las almohadillas de goma sobre el suelo.
+    \end{itemize}
+
+    \item \textbf{Dinámica de Orientación de Cabeceo (Subgráfica Inferior -- Doble Escala):}
+    \begin{itemize}
+        \item El eje izquierdo (curva verde continua) mide la variación del ángulo de cabeceo $\theta(t)$ [grados].
+        \item El eje derecho (curva roja discontinua) registra la velocidad angular de cabeceo $\omega_y(t)$ [grados/segundo].
+        \item La orientación del chasis se mantiene extraordinariamente nivelada: el ángulo de inclinación oscila en un rango mínimo acotado entre $-0.05^\circ$ y $+0.07^\circ$, y la velocidad angular nunca supera $\pm 1.8^\circ/\text{s}$. Esto certifica que el optimizador balanceó los pares de contacto de forma tal que el torque neto alrededor del eje transversal $Y$ se mantuvo prácticamente nulo, evitando balanceos o volcaduras del robot durante el salto.
+    \end{itemize}
+\end{enumerate}
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{outputs/p1_articulaciones.png}
-\caption{Evolución de los 12 ángulos articulares en Unitree A1 durante el salto, respetando holgadamente los límites mecánicos.}
+\includegraphics[width=0.94\textwidth]{outputs/p1_articulaciones.png}
+\caption{Evolución de los 12 ángulos articulares en Unitree A1 durante el salto: (Arriba) Hip Roll $q_1$; (Centro) Thigh Pitch $q_2$; (Abajo) Calf Pitch $q_3$, verificando la conformidad holgada con los límites mecánicos del actuador.}
 \label{fig:p1_joints}
 \end{figure}
 
+\subsection{Comportamiento Articular y Cinemática Inversa Sagital (Figura~\ref{fig:p1_joints})}
+La Figura~\ref{fig:p1_joints} detalla la respuesta cinemática de los 12 servomotores del Unitree A1 (FL en azul, FR en naranja, RL en verde y RR en rojo):
+\begin{itemize}
+    \item \textbf{Articulación 1 -- Hip Roll ($q_1$):} Permanece en $0.00\text{ rad}$ ($0.00^\circ$) durante toda la trayectoria para las 4 patas, respetando holgadamente los límites mecánicos de $[-0.80, +0.80]\text{ rad}$. Esto confirma que la maniobra se ejecuta estrictamente confinada al plano sagital sin gasto energético en balanceos laterales espurios.
+    \item \textbf{Articulación 2 -- Thigh Pitch ($q_2$):} Varía suavemente entre $0.5\text{ rad}$ ($28.6^\circ$) y $1.8\text{ rad}$ ($103.1^\circ$), manteniéndose lejos de los topes físicos de $[-1.0, 3.5]\text{ rad}$.
+    \item \textbf{Articulación 3 -- Calf Pitch ($q_3$):} Opera entre $-2.6\text{ rad}$ (máxima flexión durante la retracción en pleno vuelo) y $-1.1\text{ rad}$ (extensión de captura de suelo), respetando con un margen de seguridad de $0.1\text{ rad}$ el límite constructivo de la rodilla ($[-2.7, -0.9]\text{ rad}$).
+\end{itemize}
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{outputs/p1_capturas_secuencia.png}
-\caption{Capturas secuenciales de la simulación en PyBullet para el Problema 1: 1) Agache, 2) Despegue, 3) Vértice con despeje aéreo limpio, 4) Aterrizaje cuadrúpedo amortiguado.}
+\includegraphics[width=0.94\textwidth]{outputs/p1_capturas_secuencia.png}
+\caption{Secuencia cinemática y física en PyBullet para el Problema 1: 1) Agache preparatorio; 2) Despegue explosivo; 3) Vértice con superación aérea limpia del obstáculo; 4) Aterrizaje cuadrúpedo amortiguado.}
 \label{fig:p1_seq}
 \end{figure}
 
-\subsection{Resultados y Validación de Colisiones}
+\subsection{Resultados Numéricos y Validación de Colisiones}
 La optimización en CasADi/IPOPT convergió en \textbf{0.091 segundos}:
 \begin{itemize}
     \item Vértice del CoM: $z = 0.665\text{ m}$ ($+40.5\text{ cm}$ de holgura respecto a la barrera).
@@ -184,7 +248,7 @@ La optimización en CasADi/IPOPT convergió en \textbf{0.091 segundos}:
     \item \textbf{Verificación en PyBullet con Dinámica Activa:} Se habilitó el monitoreo de puntos de contacto \texttt{p.getContactPoints()} en cada sub-paso de simulación a 240~Hz. Resultado: \textbf{Total de contactos con el obstáculo = 0} (sin penetración física ni contacto espurio).
 \end{itemize}
 
-\section{Problema 2: Salto Mortal Acrobático 360$^\circ$ (Backflip)}
+\section{Problema 2: Salto Mortal Acrobático \texorpdfstring{360$^\circ$}{360 grados} (Backflip)}
 \subsection{Formulación y Conservación de Momento Angular}
 El objetivo es ejecutar una rotación continua completa de $360^\circ$ en cabeceo ($\theta: 0 \to -2\pi\text{ rad}$) aterrizando en reposo en cuatro patas.
 
@@ -201,33 +265,94 @@ Al retraer las patas hacia el chasis (\textit{tucking}), el momento de inercia d
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{outputs/p2_evolucion_backflip.png}
-\caption{Evolución rotacional de $\theta(t)$ de 0 a $-360^\circ$, velocidad angular $\omega(t)$, CoM y perfil de inercia variable $I_{yy}(t)$.}
+\includegraphics[width=0.94\textwidth]{outputs/p2_evolucion_backflip.png}
+\caption{Dinámica rotacional 360$^\circ$, traslación del CoM y modulación de inercia: (1) Ángulo pitch $\theta(t)$ de $0^\circ$ a $-360^\circ$; (2) Velocidad angular de rotación $\omega_y(t)$; (3) Altura vertical y avance longitudinal del CoM; (4) Modulación de inercia $I_{yy}(t)$ por efecto \textit{tucking}.}
 \label{fig:p2_rot}
 \end{figure}
 
+\subsection{Análisis de la Dinámica Rotacional \texorpdfstring{360$^\circ$}{360 grados}, Cinemática y Efecto Tucking (Figura~\ref{fig:p2_rot})}
+La Figura~\ref{fig:p2_rot} desglosa la maniobra acrobática tridimensional en cuatro subgráficas temporales sincronizadas:
+
+\begin{enumerate}
+    \item \textbf{Subgráfica 1 -- Ángulo de Inclinación Pitch $\theta(t)$ [deg]:}
+    \begin{itemize}
+        \item Muestra la evolución continua del ángulo de cabeceo (curva magenta oscuro) desde el reposo en $0.0^\circ$ hasta completar la revolución exacta de $-360.0^\circ$ ($-2\pi\text{ rad}$).
+        \item La línea horizontal punteada naranja en $-180.0^\circ$ señala el instante exacto de inversión aérea cenital ($t \approx 0.53\text{ s}$), donde el robot se encuentra en la cúspide parabólica suspendido completamente boca abajo (con el lomo apuntando hacia el suelo y el vientre hacia arriba).
+        \item La línea verde discontinua marca la meta angular de rotación completa en $-360.0^\circ$. Al momento del contacto de aterrizaje (\textit{touchdown} en $t = 0.82\text{ s}$), el robot ya ha completado $-335.0^\circ$ en el aire, lo que garantiza que las extremidades toquen el piso orientadas verticalmente hacia abajo, disipando los últimos $25^\circ$ en el proceso de amortiguación articular.
+    \end{itemize}
+
+    \item \textbf{Subgráfica 2 -- Velocidad Angular de Cabeceo $\omega_y(t)$ [rad/s]:}
+    \begin{itemize}
+        \item La curva roja continua traza la velocidad angular $\omega_y(t)$ en rad/s (con escala secundaria punteada en decenas de deg/s).
+        \item En la fase de impulso propulsivo ($t \in [0.15, 0.27]\text{ s}$), el torque asimétrico dispara la velocidad angular hasta alcanzar un pico de $-9.51\text{ rad/s}$ ($-545.1^\circ/\text{s}$). Durante el vuelo aéreo balístico libre ($t \in [0.27, 0.82]\text{ s}$), la velocidad angular se sostiene en niveles sumamente elevados, permitiendo recorrer la circunferencia de $360^\circ$ en apenas $0.55\text{ s}$ de vuelo.
+    \end{itemize}
+
+    \item \textbf{Subgráfica 3 -- Trayectoria Espacial del Centro de Masa ($p_z(t), p_x(t)$):}
+    \begin{itemize}
+        \item La curva azul continua $p_z(t)$ mide la altura vertical del CoM, la cual se eleva vigorosamente desde $0.30\text{ m}$ hasta un vértice cenital de $z = 0.845\text{ m}$ ($84.5\text{ cm}$ de altura), proporcionando la holgura gravitacional requerida para que el chasis de $28\text{ cm}$ de envergadura complete el giro sin colisionar el lomo contra el piso.
+        \item La curva cian discontinua $p_x(t)$ revela un desplazamiento longitudinal mínimo ($\Delta x = +0.042\text{ m}$), demostrando que el mortal hacia atrás se realiza prácticamente en el mismo lugar de origen (\textit{standing backflip}).
+    \end{itemize}
+
+    \item \textbf{Subgráfica 4 -- Perfil de Inercia Variable $I_{yy}(t)$ (Efecto Tucking):}
+    \begin{itemize}
+        \item Ilustra la variación activa del momento de inercia corporal (curva verde azulado) en $\text{g}\cdot\text{m}^2$.
+        \item En posición de parada, la inercia nominal es de $56.5\text{ g}\cdot\text{m}^2$. Al retraer activamente las cuatro patas contra el tronco durante el vuelo libre, la inercia se contrae hasta $32.0\text{ g}\cdot\text{m}^2$ (reducción del $43.4\%$). Por conservación rigurosa del momento angular aéreo ($L_y = I_{yy}(t) \omega_y(t) = \text{constante}$), esta reducción de inercia acelera la velocidad de giro. Previo al aterrizaje, las patas se extienden aumentando la inercia nuevamente, lo que frena el cabeceo y prepara las extremidades para capturar el suelo con estabilidad.
+    \end{itemize}
+\end{enumerate}
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{outputs/p2_fuerzas_backflip.png}
-\caption{Fuerzas de reacción del suelo e impulso angular neto de cabeceo $\tau_y(t)$ durante el Backflip.}
+\includegraphics[width=0.94\textwidth]{outputs/p2_fuerzas_backflip.png}
+\caption{Fuerzas de reacción del suelo e impulso angular en el Backflip: (Arriba) Fuerzas normales $F_z$ con asimetría deliberada de despegue; (Centro) Fuerzas tangenciales $F_x$ y envolventes de fricción; (Abajo) Torque neto de cabeceo $\tau_y(t)$ inductor de la rotación.}
 \label{fig:p2_forces}
 \end{figure}
 
+\subsection{Análisis de Fuerzas de Contacto e Impulso Angular Asimétrico (Figura~\ref{fig:p2_forces})}
+La Figura~\ref{fig:p2_forces} evidencia los mecanismos dinámicos de propulsión y absorción de impacto del salto mortal:
+
+\begin{enumerate}
+    \item \textbf{Fuerzas Normales Verticales $F_z$ (Subgráfica Superior):}
+    \begin{itemize}
+        \item Curva azul ($F_{z,F}$ patas delanteras), morada ($F_{z,R}$ patas traseras) y negra discontinua ($F_{z,\text{total}}$).
+        \item En la fase de despegue ($t \approx 0.20\text{ s}$), las patas traseras y delanteras ejercen una fuerza vertical asimétrica y coordinada para levantar el robot verticalmente con fuerzas de hasta $320\text{ N}$, permaneciendo dentro de los límites de par de los actuadores de Unitree A1.
+        \item Durante la fase de vuelo ($t \in [0.27, 0.82]\text{ s}$), las fuerzas se mantienen rigurosamente en $0.00\text{ N}$.
+        \item En el aterrizaje a los $360^\circ$ ($t \ge 0.82\text{ s}$), las cuatro patas hacen contacto casi simultáneo, absorbiendo el impacto con fuerzas de hasta $450\text{ N}$ distribuidas uniformemente.
+    \end{itemize}
+
+    \item \textbf{Fuerzas Tangenciales $F_x$ y Límites de Fricción (Subgráfica Central):}
+    \begin{itemize}
+        \item Las fuerzas longitudinales de fricción se mantienen estrictamente dentro de los conos de Coulomb ($\pm \mu F_z$ con $\mu = 0.80$, líneas punteadas). No se produce derrape en el suelo durante el empuje preparatorio ni en la recepción del impacto.
+    \end{itemize}
+
+    \item \textbf{Torque Neto de Cabeceo $\tau_y(t)$ (Subgráfica Inferior):}
+    \begin{itemize}
+        \item La curva rojo oscuro registra el momento resultante en torno al eje $Y$ producido por la asimetría de fuerzas de contacto: $\tau_y(t) = \sum ((r_{x,i} - p_x) f_{z,i} - (r_{z,i} - p_z) f_{x,i})$.
+        \item En el despegue se observa un pulso negativo extremo de torque que alcanza $\tau_y \approx -28.5\text{ N}\cdot\text{m}$. Este impulso angular transferido durante apenas $0.12\text{ s}$ es el que inyecta todo el momento angular aéreo $L_y$ necesario para sustentar la rotación completa de $360^\circ$ sin propulsores externos.
+    \end{itemize}
+\end{enumerate}
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{outputs/p2_articulaciones_backflip.png}
-\caption{Evolución de las 12 articulaciones durante el giro acrobático de 360$^\circ$.}
+\includegraphics[width=0.94\textwidth]{outputs/p2_articulaciones_backflip.png}
+\caption{Evolución de los 12 ángulos articulares en Unitree A1 durante el Backflip: (Arriba) Hip Roll $q_1$; (Centro) Thigh Pitch $q_2$; (Abajo) Calf Pitch $q_3$.}
 \label{fig:p2_joints}
 \end{figure}
 
+\subsection{Evolución Articular y Preservación de Simetría Sagital (Figura~\ref{fig:p2_joints})}
+La Figura~\ref{fig:p2_joints} certifica la viabilidad mecánica y la elegancia espacial del movimiento:
+\begin{itemize}
+    \item \textbf{Hip Roll ($q_1$):} Todas las 4 extremidades se mantienen rigurosamente en $q_1 \equiv 0.000000\text{ rad}$ ($0.00^\circ$) durante los 1.07~segundos de la maniobra. Esto elimina cualquier apertura descontrolada de las patas hacia afuera o cruce de extremidades en forma de ``X'', garantizando un salto limpio, armónico y simétrico.
+    \item \textbf{Thigh Pitch ($q_2$) y Calf Pitch ($q_3$):} Durante el despegue las extremidades se extienden para empujar el suelo, en el aire se repliegan simétricamente para encogerse y reducir la inercia rotacional, y finalmente se extienden de manera coordinada justo antes del contacto en $t = 0.82\text{ s}$ para recibir el suelo erguidas y amortiguar el impacto.
+\end{itemize}
+
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.92\textwidth]{outputs/p2_capturas_secuencia.png}
-\caption{Secuencia de simulación en PyBullet del Backflip 360$^\circ$: 1) Agache, 2) Despegue con cabeceo, 3) Vértice invertido ($-180^\circ$), 4) Aterrizaje completo amortiguado ($-360^\circ$).}
+\includegraphics[width=0.94\textwidth]{outputs/p2_capturas_secuencia.png}
+\caption{Secuencia cinemática y física del Backflip 360$^\circ$ en PyBullet: 1) Agache preparatorio; 2) Despegue explosivo con inducción angular; 3) Vértice invertido (-180$^\circ$) en cúspide parabólica; 4) Aterrizaje erguido completo (-360$^\circ$).}
 \label{fig:p2_seq}
 \end{figure}
 
-\subsection{Resultados Obtenidos (Problema 2)}
+\subsection{Resultados Numéricos Obtenidos (Problema 2)}
 El problema NLP del Backflip fue resuelto en \textbf{0.136 segundos} por CasADi/IPOPT:
 \begin{itemize}
     \item Rotación final exacta: $\theta = -360.0^\circ$ ($-6.283\text{ rad}$).
@@ -245,6 +370,7 @@ La Tabla~\ref{tab:resumen} presenta la comparación directa de ambos problemas o
 \centering
 \caption{Resumen Cuantitativo de los Movimientos Optimizados}
 \label{tab:resumen}
+\footnotesize
 \begin{tabular}{lcc}
 \toprule
 \textbf{Métrica / Parámetro} & \textbf{Problema 1: Salto de Obstáculo} & \textbf{Problema 2: Backflip 360$^\circ$} \\

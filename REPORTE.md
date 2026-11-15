@@ -111,13 +111,28 @@ Horizonte total $T = 1.05\text{ s}$ discretizado en 4 fases:
 - **Contactos físicos con el obstáculo en PyBullet:** **0 contactos (100% libre de colisiones)**.
 
 ![Perfil Sagital y CoM](outputs/p1_trayectoria_salto.png)
-*Figura 1: Trayectoria espacial sagital del CoM y de los pies superando el obstáculo alto.*
+*Figura 1: Trayectoria espacial sagital del CoM y de los pies superando el obstáculo alto, y evolución temporal de posición y velocidad.*
+
+#### Desglose Detallado de la Figura 1:
+- **Subgráfica 1 (Plano Sagital X-Z):** Ejes en metros ($X \in [-0.15, 1.35]\text{ m}$, $Z \in [-0.04, 0.98]\text{ m}$). Muestra el obstáculo rígido de $26\text{ cm}$ de altura en $x \in [0.52, 0.64]\text{ m}$. La curva azul continua traza la parábola balística del CoM, con agache preparatorio en $x=0$, despegue en $x = 0.121\text{ m}$, vértice cumbre en $x = 0.583\text{ m}, z = 0.665\text{ m}$ (despeje de $+40.5\text{ cm}$), y aterrizaje en $x = 1.15\text{ m}$. Las curvas discontinuas verde (delanteras) y morada (traseras) trazan el vuelo de los pies con repliegue activo ($z_{\text{foot}} \ge 0.515\text{ m}$, margen neto $+25.5\text{ cm}$). Puntos anaranjados: apoyos de despegue; puntos cuadrados azules: apoyos de aterrizaje.
+- **Subgráfica 2 (Evolución Temporal de Posición):** Tiempo $t \in [0, 1.05]\text{ s}$ en 4 fases (Compresión, Impulso, Vuelo, Aterrizaje). La posición longitudinal $p_x(t)$ (azul marino) permanece estática en compresión y avanza a tasa lineal en vuelo. La altura $p_z(t)$ (verde azulado) desciende $12\text{ cm}$ en compresión, se eleva velozmente y corona la cumbre parabólica superando con amplio margen la línea roja punteada del obstáculo ($0.26\text{ m}$).
+- **Subgráfica 3 (Evolución Temporal de Velocidad):** Velocidad horizontal $v_x(t)$ (azul) alcanza $1.71\text{ m/s}$ y se conserva rígidamente constante en vuelo ($\dot{v}_x = 0$). Velocidad vertical $v_z(t)$ (cian) se dispara a $+2.66\text{ m/s}$ en el despegue, desciende con pendiente lineal constante de aceleración $-9.81\text{ m/s}^2$ cruzando por cero en el vértice y alcanzando $-2.66\text{ m/s}$ antes del impacto, donde las patas absorben la energía hasta el reposo total.
 
 ![Fuerzas de Contacto GRF](outputs/p1_fuerzas_grf.png)
-*Figura 2: Fuerzas normales $F_z$ y tangenciales $F_x$ respetando estrictamente el cono de fricción.*
+*Figura 2: Fuerzas normales $F_z$, tangenciales $F_x$ y conos de fricción en las 4 fases del salto.*
+
+#### Desglose Detallado de la Figura 2:
+- **Subgráfica 1 (Fuerzas Normales $F_z$):** Fuerza en patas delanteras $F_{z,F}$ (azul), traseras $F_{z,R}$ (morado) y total (negro discontinuo) frente al peso del robot $mg = 117.7\text{ N}$ (rojo punteado). Pico propulsivo de $485\text{ N}$ ($4.1g$), anulación exacta a $0\text{ N}$ durante el vuelo aéreo ($t \in [0.27, 0.81]\text{ s}$), y pico de amortiguación de aterrizaje de $590\text{ N}$ disipando suavemente la energía.
+- **Subgráfica 2 (Fuerzas Tangenciales $F_x$ y Conos de Fricción):** Fuerzas longitudinales contenidas estrictamente dentro de los conos de fricción de Coulomb ($\pm \mu F_z$ con $\mu = 0.70$, líneas naranjas punteadas), certificando tracción y agarre perfecto sin deslizamiento.
+- **Subgráfica 3 (Dinámica de Cabeceo Pitch):** Ángulo $\theta(t)$ (verde, eje izquierdo) y velocidad angular $\omega_y(t)$ (rojo discontinuo, eje derecho) mostrando una estabilidad extraordinaria: inclinación confinada a $[-0.05^\circ, +0.07^\circ]$ y velocidad angular por debajo de $\pm 1.8^\circ/\text{s}$, demostrando equilibrio total y ausencia de oscilaciones.
 
 ![Articulaciones de las 4 Patas](outputs/p1_articulaciones.png)
 *Figura 3: Trayectorias articulares de las 12 articulaciones dentro de los límites mecánicos del A1.*
+
+#### Desglose Detallado de la Figura 3:
+- **Hip Roll ($q_1$):** Idénticamente $0.00\text{ rad}$ ($0^\circ$) en todas las fases y patas, certificando contención sagital estricta.
+- **Thigh Pitch ($q_2$):** Evoluciona suavemente entre $0.5$ y $1.8\text{ rad}$, dentro de los topes mecánicos $[-1.0, 3.5]\text{ rad}$.
+- **Calf Pitch ($q_3$):** Flexiona entre $-2.6\text{ rad}$ (retracción aérea) y $-1.1\text{ rad}$ (extensión de soporte), respetando los límites constructivos $[-2.7, -0.9]\text{ rad}$.
 
 ![Secuencia en PyBullet](outputs/p1_capturas_secuencia.png)
 *Figura 4: Mosaico de 4 fases en PyBullet con física activa y renderizado de alto contraste.*
@@ -136,11 +151,26 @@ Horizonte total $T = 1.05\text{ s}$ discretizado en 4 fases:
 ![Rotación 360 e Inercia Variable](outputs/p2_evolucion_backflip.png)
 *Figura 5: Evolución temporal de $\theta(t)$, $\omega(t)$, altura CoM y reducción de inercia $I_{yy}(t)$.*
 
+#### Desglose Detallado de la Figura 5:
+- **Subgráfica 1 (Ángulo Pitch $\theta(t)$):** Recorre continuamente de $0^\circ$ a $-360^\circ$ ($-2\pi\text{ rad}$). La línea naranja punteada en $-180^\circ$ marca la inversión cenital en la cumbre aérea. Al touchdown ($t = 0.82\text{ s}$), el robot ya ha rotado $-335^\circ$ en el aire, garantizando que aterrice erguido en cuatro patas.
+- **Subgráfica 2 (Velocidad Angular $\omega_y(t)$):** Pico extremo de $-9.51\text{ rad/s}$ ($-545.1^\circ/\text{s}$) inducido por el empuje asimétrico, sostenido en el aire para completar la vuelta en $0.55\text{ s}$ de vuelo libre.
+- **Subgráfica 3 (Centro de Masa):** Altura máxima $z = 0.845\text{ m}$ ($84.5\text{ cm}$) otorgando tiempo de suspensión, con desplazamiento horizontal casi nulo ($\Delta x = +0.042\text{ m}$, mortal estático en el sitio).
+- **Subgráfica 4 (Inercia Variable $I_{yy}(t)$):** Efecto dinámico de plegado (*tucking*), reduciendo la inercia corporal en un $43.4\%$ de $56.5\text{ g}\cdot\text{m}^2$ a $32.0\text{ g}\cdot\text{m}^2$, multiplicando la velocidad de giro por conservación estricta de momento angular $L_y = I_{yy} \omega_y$.
+
 ![Fuerzas e Impulso Backflip](outputs/p2_fuerzas_backflip.png)
-*Figura 6: Fuerzas normales y torque neto de cabeceo $\tau_y(t)$ durante el Backflip.*
+*Figura 6: Fuerzas normales, tangenciales y torque neto de cabeceo $\tau_y(t)$ durante el Backflip.*
+
+#### Desglose Detallado de la Figura 6:
+- **Subgráfica 1 (Fuerzas Normales $F_z$):** Asimetría coordinada en despegue ($320\text{ N}$), anulación total a $0\text{ N}$ en vuelo libre y absorción uniforme en aterrizaje ($450\text{ N}$).
+- **Subgráfica 2 (Fuerzas Tangenciales $F_x$):** Confinadas estrictamente dentro de los conos de Coulomb ($\pm \mu F_z$ con $\mu = 0.80$).
+- **Subgráfica 3 (Torque Neto de Cabeceo $\tau_y(t)$):** Pulso negativo extremo de hasta $-28.5\text{ N}\cdot\text{m}$ en el despegue que transfiere el momento angular aéreo $L_y$ necesario para el giro.
 
 ![Articulaciones Backflip](outputs/p2_articulaciones_backflip.png)
 *Figura 7: Evolución de las 12 articulaciones durante la rotación completa de 360°.*
+
+#### Desglose Detallado de la Figura 7:
+- **Hip Roll ($q_1$):** Rigurosamente idéntico a $0.000000\text{ rad}$ ($0.00^\circ$) en todas las fases y patas, suprimiendo cualquier cruce en "X" o desviación lateral.
+- **Thigh Pitch ($q_2$) y Calf Pitch ($q_3$):** Flexión y extensión simétricas respetando holgadamente los límites articulares mecánicos.
 
 ![Secuencia Backflip PyBullet](outputs/p2_capturas_secuencia.png)
 *Figura 8: Mosaico del Backflip 360° en PyBullet: 1) Agache, 2) Despegue, 3) Vértice invertido (-180°), 4) Aterrizaje cuadrúpedo (-360°).*

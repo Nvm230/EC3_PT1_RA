@@ -3,9 +3,9 @@
 ===============================================================================
 GENERACIÓN DE GRÁFICAS ANALÍTICAS: SALTO SOBRE OBSTÁCULO (PARTE 1)
 ===============================================================================
-Genera figuras profesionales y nítidas de:
+Genera figuras profesionales, nítidas y desahogadas de:
   1. Perfil espacial en el plano sagital (X vs Z) y evolución temporal
-     desacoplada de posición y velocidad del CoM.
+     desacoplada de posición y velocidad del CoM (sin solapamiento de leyendas).
   2. Fuerzas de reacción en el piso (GRF), conos de fricción de Coulomb
      y dinámica de orientación de cabeceo (pitch) con doble escala.
   3. Trayectorias articulares de las 4 patas con límites mecánicos del Unitree A1.
@@ -17,15 +17,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 
-# Configuración visual sobria y elegante
+# Configuración visual sobria y elegante con márgenes generosos
 plt.rcParams.update({
-    "font.size": 11,
-    "axes.labelsize": 12,
-    "axes.titlesize": 13,
+    "font.size": 10.5,
+    "axes.labelsize": 11.5,
+    "axes.titlesize": 12.5,
     "xtick.labelsize": 10,
     "ytick.labelsize": 10,
-    "legend.fontsize": 9.5,
-    "figure.titlesize": 14,
+    "legend.fontsize": 9,
+    "figure.titlesize": 13.5,
     "grid.alpha": 0.35,
     "grid.linestyle": "--"
 })
@@ -68,54 +68,59 @@ def generate_plots():
     idx_flight = slice(N1 + N2, N1 + N2 + N3 + 1)
 
     # =========================================================================
-    # FIGURA 1: PERFIL ESPACIAL SAGITAL (X vs Z) Y EVOLUCIÓN TEMPORAL DESACOPLADA
+    # FIGURA 1: PERFIL ESPACIAL SAGITAL (X vs Z) Y CINEMÁTICA TEMPORAL
     # =========================================================================
-    fig = plt.figure(figsize=(11, 10))
-    gs = fig.add_gridspec(3, 1, height_ratios=[1.4, 0.9, 0.9], hspace=0.32)
+    fig = plt.figure(figsize=(11, 10.5))
+    gs = fig.add_gridspec(3, 1, height_ratios=[1.35, 0.85, 0.85], hspace=0.38)
 
     ax1 = fig.add_subplot(gs[0])
     ax2 = fig.add_subplot(gs[1])
     ax3 = fig.add_subplot(gs[2], sharex=ax2)
 
     # -------------------------------------------------------------
-    # Subplot 1: Plano Sagital X-Z (Trayectoria de Salto y Obstáculo)
+    # Subplot 1: Plano Sagital X-Z
     # -------------------------------------------------------------
-    # Suelo continuo
     ax1.axhline(0.0, color="#2C3E50", lw=2, ls="-", label="Suelo (z = 0)")
 
-    # Obstáculo con colores de alto contraste idénticos a PyBullet
+    # Obstáculo rígido con franja de seguridad en amarillo
     obs_w = obs["x_max"] - obs["x_min"]
     rect_body = patches.Rectangle((obs["x_min"], 0.0), obs_w, obs["h"] - 0.02,
                                   linewidth=1.5, edgecolor="#1B2631", facecolor="#2C3E50",
-                                  alpha=0.9, label=f"Obstaculo Alto (h = {obs['h']:.2f} m)")
+                                  alpha=0.9, label=f"Obstaculo (h = {obs['h']:.2f} m)")
     rect_trim = patches.Rectangle((obs["x_min"], obs["h"] - 0.02), obs_w, 0.02,
                                   linewidth=1.2, edgecolor="#B7950B", facecolor="#F1C40F",
                                   alpha=1.0, label="Franja Seguridad Amarilla")
     ax1.add_patch(rect_body)
     ax1.add_patch(rect_trim)
 
-    # Trayectoria de vuelo del CoM (desde inicio de impulso hasta aterrizaje)
-    idx_motion = slice(N1, N1 + N2 + N3 + N4 + 1)
-    ax1.plot(px[idx_motion], pz[idx_motion], color="#1B4F72", lw=3.0, label="Trayectoria CoM (Base)")
+    # Trayectoria parabólica de avance y vuelo del CoM (sin el hook estático de agache)
+    idx_jump = slice(N1, N1 + N2 + N3 + 1)
+    ax1.plot(px[idx_jump], pz[idx_jump], color="#1B4F72", lw=3.0, label="Trayectoria CoM (Base)")
 
-    # Trayectorias aéreas de los pies (durante la fase de vuelo, sin artefactos en suelo)
-    ax1.plot(feet[idx_flight, 0, 0], feet[idx_flight, 0, 2], color="#27AE60", ls="--", lw=2.2, label="Pies Frontales en Vuelo (FL/FR)")
-    ax1.plot(feet[idx_flight, 2, 0], feet[idx_flight, 2, 2], color="#8E44AD", ls="--", lw=2.2, label="Pies Traseros en Vuelo (RL/RR)")
+    # Indicador de agache preparatorio en el origen (0, 0.30) -> (0, 0.18)
+    ax1.annotate("", xy=(0.0, pz[N1]), xytext=(0.0, pz[0]),
+                 arrowprops=dict(arrowstyle="->", lw=2.0, color="#1B4F72", ls=":"))
+    ax1.scatter([0.0], [pz[0]], color="#1B4F72", s=50, marker="o")
+    ax1.text(0.02, 0.24, "Agache\n$\\Delta z = 12$ cm", fontsize=8.5, color="#1B4F72", va="center")
 
-    # Posiciones de apoyo de pies en despegue y aterrizaje
+    # Trayectorias aéreas de los pies (durante vuelo libre)
+    ax1.plot(feet[idx_flight, 0, 0], feet[idx_flight, 0, 2], color="#27AE60", ls="--", lw=2.2, label="Pies Frontales Vuelo (FL/FR)")
+    ax1.plot(feet[idx_flight, 2, 0], feet[idx_flight, 2, 2], color="#8E44AD", ls="--", lw=2.2, label="Pies Traseros Vuelo (RL/RR)")
+
+    # Puntos de contacto en despegue y aterrizaje
     p_takeoff_F = [obs["x_min"] - 0.34, 0.0]
     p_takeoff_R = [obs["x_min"] - 0.70, 0.0]
     p_land_F = [data["landing"]["rx_land_F"], 0.0]
     p_land_R = [data["landing"]["rx_land_R"], 0.0]
 
-    ax1.scatter([p_takeoff_F[0], p_takeoff_R[0]], [0.0, 0.0], color="#D35400", s=60, marker="o", zorder=6, label="Apoyos Despegue (x < 0.2 m)")
-    ax1.scatter([p_land_F[0], p_land_R[0]], [0.0, 0.0], color="#2980B9", s=60, marker="s", zorder=6, label="Apoyos Aterrizaje (x > 0.9 m)")
+    ax1.scatter([p_takeoff_F[0], p_takeoff_R[0]], [0.0, 0.0], color="#D35400", s=65, marker="o", zorder=6, label="Apoyos Despegue")
+    ax1.scatter([p_land_F[0], p_land_R[0]], [0.0, 0.0], color="#2980B9", s=65, marker="s", zorder=6, label="Apoyos Aterrizaje")
 
-    # Punto ápice del CoM
+    # Vértice del CoM y cotas de despeje
     ax1.scatter([px[k_apex]], [pz[k_apex]], color="#C0392B", s=90, zorder=7)
     clearance_com = pz[k_apex] - obs["h"]
-    ax1.annotate(f"Vertice CoM: z = {pz[k_apex]:.3f} m\nMargen CoM: +{clearance_com*100:.1f} cm",
-                 xy=(px[k_apex], pz[k_apex]), xytext=(px[k_apex] - 0.16, pz[k_apex] + 0.07),
+    ax1.annotate(f"Vertice CoM: z = {pz[k_apex]:.3f} m\nDespeje CoM: +{clearance_com*100:.1f} cm",
+                 xy=(px[k_apex], pz[k_apex]), xytext=(px[k_apex] - 0.22, pz[k_apex] + 0.14),
                  arrowprops=dict(arrowstyle="->", lw=1.5, color="#C0392B"),
                  bbox=dict(boxstyle="round,pad=0.3", fc="#FDEDEC", ec="#C0392B", lw=1.2))
 
@@ -123,45 +128,45 @@ def generate_plots():
     foot_h_above_obs = np.min(feet[idx_flight, :, 2])
     clearance_foot = foot_h_above_obs - obs["h"]
     x_mid_obs = 0.5 * (obs["x_min"] + obs["x_max"])
-    ax1.annotate(f"Paso Limpio de Patas\nMargen: +{clearance_foot*100:.1f} cm",
-                 xy=(x_mid_obs, foot_h_above_obs), xytext=(x_mid_obs + 0.12, foot_h_above_obs + 0.07),
+    ax1.annotate(f"Despeje Neto de Patas\nMargen: +{clearance_foot*100:.1f} cm",
+                 xy=(x_mid_obs, foot_h_above_obs), xytext=(x_mid_obs + 0.16, foot_h_above_obs + 0.10),
                  arrowprops=dict(arrowstyle="->", lw=1.3, color="#27AE60"),
                  bbox=dict(boxstyle="round,pad=0.3", fc="#E8F8F5", ec="#27AE60", lw=1.2))
 
     ax1.set_xlabel("Posicion Longitudinal X [m]")
     ax1.set_ylabel("Altura Z [m]")
-    ax1.set_title("Plano Sagital: Salto Balistico y Superacion del Obstaculo Alto")
-    ax1.legend(loc="upper right", framealpha=0.92, ncol=2)
+    ax1.set_title("Plano Sagital: Salto Balistico y Superacion del Obstaculo Alto (Unitree A1)")
+    # Leyenda situada fuera del área de conflicto en la esquina superior izquierda
+    ax1.legend(loc="upper left", framealpha=0.92, ncol=2)
     ax1.grid(True)
     ax1.set_xlim(-0.15, 1.35)
-    ax1.set_ylim(-0.04, 0.82)
+    ax1.set_ylim(-0.04, 0.98)
 
     # -------------------------------------------------------------
-    # Subplot 2: Evolución de Posición del CoM vs Tiempo
+    # Subplot 2: Posición del CoM vs Tiempo
     # -------------------------------------------------------------
     ax2.plot(t, px, color="#1F618D", lw=2.2, label=r"Avance Longitudinal $p_x(t)$ [m]")
     ax2.plot(t, pz, color="#117864", lw=2.2, label=r"Altura Vertical $p_z(t)$ [m]")
     ax2.axhline(obs["h"], color="#C0392B", ls=":", lw=1.2, label=f"Altura Obstaculo ({obs['h']} m)")
 
-    # Separadores de fases
     for t_ph in [t_crouch, t_takeoff, t_flight_end]:
         ax2.axvline(t_ph, color="#7F8C8D", ls=":", lw=1.2)
         ax3.axvline(t_ph, color="#7F8C8D", ls=":", lw=1.2)
 
-    y_lbl = 1.05
-    ax2.text(t_crouch / 2, y_lbl, "Compresion", ha="center", fontsize=9, bbox=dict(fc="#F2F4F4", ec="gray", pad=2))
-    ax2.text((t_crouch + t_takeoff) / 2, y_lbl, "Impulso", ha="center", fontsize=9, bbox=dict(fc="#F2F4F4", ec="gray", pad=2))
-    ax2.text((t_takeoff + t_flight_end) / 2, y_lbl, "Vuelo Libre", ha="center", fontsize=9, bbox=dict(fc="#F2F4F4", ec="gray", pad=2))
-    ax2.text((t_flight_end + t[-1]) / 2, y_lbl, "Aterrizaje", ha="center", fontsize=9, bbox=dict(fc="#F2F4F4", ec="gray", pad=2))
+    y_lbl = 1.15
+    ax2.text(t_crouch / 2, y_lbl, "Compresion", ha="center", fontsize=8.5, bbox=dict(fc="#F2F4F4", ec="gray", pad=1.5))
+    ax2.text((t_crouch + t_takeoff) / 2, y_lbl, "Impulso", ha="center", fontsize=8.5, bbox=dict(fc="#F2F4F4", ec="gray", pad=1.5))
+    ax2.text((t_takeoff + t_flight_end) / 2, y_lbl, "Vuelo Libre", ha="center", fontsize=8.5, bbox=dict(fc="#F2F4F4", ec="gray", pad=1.5))
+    ax2.text((t_flight_end + t[-1]) / 2, y_lbl, "Aterrizaje", ha="center", fontsize=8.5, bbox=dict(fc="#F2F4F4", ec="gray", pad=1.5))
 
     ax2.set_ylabel("Posicion [m]")
-    ax2.set_title("Evolucion de Posicion del Centro de Masa (CoM)")
+    ax2.set_title("Evolucion Temporal de Posicion del Centro de Masa (CoM)")
     ax2.legend(loc="center left", framealpha=0.9)
     ax2.grid(True)
-    ax2.set_ylim(0.0, 1.25)
+    ax2.set_ylim(-0.05, 1.35)
 
     # -------------------------------------------------------------
-    # Subplot 3: Evolución de Velocidad del CoM vs Tiempo
+    # Subplot 3: Velocidad del CoM vs Tiempo
     # -------------------------------------------------------------
     ax3.plot(t, vx, color="#2980B9", lw=2.0, ls="-", label=r"Velocidad Horizontal $v_x(t)$ [m/s]")
     ax3.plot(t, vz, color="#16A085", lw=2.0, ls="-", label=r"Velocidad Vertical $v_z(t)$ [m/s]")
@@ -169,10 +174,10 @@ def generate_plots():
 
     ax3.set_xlabel("Tiempo [s]")
     ax3.set_ylabel("Velocidad [m/s]")
-    ax3.set_title("Evolucion de Velocidad del Centro de Masa (CoM)")
+    ax3.set_title("Evolucion Temporal de Velocidad del Centro de Masa (CoM)")
     ax3.legend(loc="lower left", framealpha=0.9)
     ax3.grid(True)
-    ax3.set_ylim(-2.5, 3.2)
+    ax3.set_ylim(-2.8, 3.5)
     ax3.set_xlim(0.0, t[-1])
 
     p1_traj_path = os.path.join(output_dir, "p1_trayectoria_salto.png")
@@ -184,7 +189,7 @@ def generate_plots():
     # FIGURA 2: FUERZAS DE REACCIÓN (GRF) Y DINÁMICA DE CABECEO
     # =========================================================================
     t_steps = t[:-1]
-    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(11, 9.5), sharex=True)
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(11, 10), sharex=True)
 
     # 1. Fuerzas normales verticales
     ax1.plot(t_steps, fz_F, color="#2980B9", lw=2.2, label=r"$F_{z}$ Frontal (FL+FR) [N]")
@@ -195,7 +200,7 @@ def generate_plots():
     ax1.set_title("Fuerzas de Reaccion del Suelo (GRF) - Componentes Verticales")
     ax1.legend(loc="upper right", ncol=4, framealpha=0.9)
     ax1.grid(True)
-    ax1.set_ylim(-20, 680)
+    ax1.set_ylim(-20, 800)
 
     # 2. Fuerzas tangenciales y conos de fricción
     mu = 0.7
@@ -208,9 +213,9 @@ def generate_plots():
     ax2.set_title("Fuerzas Horizontales Tangenciales y Conos de Friccion de Coulomb")
     ax2.legend(loc="upper right", ncol=3, framealpha=0.9)
     ax2.grid(True)
-    ax2.set_ylim(-260, 260)
+    ax2.set_ylim(-320, 320)
 
-    # 3. Cabeceo: Doble eje Y para Angulo [deg] y Velocidad Angular [deg/s]
+    # 3. Cabeceo con doble escala
     ax3_twin = ax3.twinx()
     l1 = ax3.plot(t, np.rad2deg(th), color="#1E8449", lw=2.2, label=r"Angulo Pitch $\theta(t)$ [deg]")
     l2 = ax3_twin.plot(t, np.rad2deg(om), color="#B03A2E", lw=1.8, ls="--", label=r"Vel. Angular Pitch $\omega_y(t)$ [deg/s]")
@@ -226,9 +231,8 @@ def generate_plots():
     labels = [l.get_label() for l in lines]
     ax3.legend(lines, labels, loc="upper right", framealpha=0.9)
     ax3.grid(True)
-
-    ax3.set_ylim(-0.35, 0.35)
-    ax3_twin.set_ylim(-2.5, 2.5)
+    ax3.set_ylim(-0.45, 0.45)
+    ax3_twin.set_ylim(-3.0, 3.0)
 
     for ax in [ax1, ax2, ax3]:
         for t_phase in [t_crouch, t_takeoff, t_flight_end]:

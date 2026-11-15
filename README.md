@@ -12,7 +12,7 @@ EC3_PT1_RA/
 ├── README.md                      <- Guía de instalación, explicación teórica y ejecución
 ├── REPORTE.md                     <- Reporte técnico exhaustivo con formulación matemática y resultados
 ├── reporte.tex                    <- Documento fuente LaTeX del reporte académico
-├── reporte.pdf                    <- Reporte formal compilado en PDF (12 páginas con figuras)
+├── reporte.pdf                    <- Reporte formal compilado en PDF (16 páginas con figuras y análisis exhaustivo)
 ├── requirements.txt               <- Dependencias de Python para cualquier sistema operativo
 ├── part1_salto_obstaculo/         <- PROBLEMA 1: Salto dinámico sobre obstáculo alto
 │   ├── modelo_srbm.py             <- Modelo dinámico SRBM y cinemática analítica directa/inversa
@@ -158,7 +158,7 @@ python3 scripts/run_all.py --gui
 
 ## 4. Reporte Técnico
 
-El documento formal de 12 páginas con la formulación matemática detallada, análisis físico de factibilidad, gráficas analíticas y tablas de resultados se encuentra disponible en el archivo `reporte.pdf` (y su código fuente en `reporte.tex`).
+El documento formal de 16 páginas con la formulación matemática detallada, análisis físico de factibilidad, desglose explicativo de cada gráfica, análisis de fuerzas y tablas de resultados se encuentra disponible en el archivo `reporte.pdf` (y su código fuente en `reporte.tex`).
 
 ---
 

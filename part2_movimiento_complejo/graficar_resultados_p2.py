@@ -75,13 +75,15 @@ def generate_plots():
     axes[0].set_title("Dinamica de Rotacion 360 y Trayectoria Espacial del Backflip Acrobatico")
     axes[0].legend(loc="lower left", framealpha=0.9)
     axes[0].grid(True)
+    axes[0].set_ylim(-400, 40)
 
     # 2. Velocidad angular
     axes[1].plot(t, om, "r-", lw=2, label=r"$\omega_y(t)$ [rad/s]")
     axes[1].plot(t, np.rad2deg(om) / 10.0, "r:", lw=1.2, label=r"$\omega_y / 10$ [deg/s]")
     axes[1].set_ylabel(r"Vel. Angular [rad/s]")
-    axes[1].legend(loc="lower left", framealpha=0.9)
+    axes[1].legend(loc="upper right", framealpha=0.9)
     axes[1].grid(True)
+    axes[1].set_ylim(-12.0, 3.0)
 
     # 3. Altura y avance CoM
     axes[2].plot(t, pz, "b-", lw=2.2, label="Altura CoM $p_z(t)$ [m]")
@@ -89,23 +91,25 @@ def generate_plots():
     k_apex = N1 + N2 + N3 // 2
     axes[2].scatter([t[k_apex]], [pz[k_apex]], color="blue", s=50, zorder=5)
     axes[2].annotate(f"Vertice: z = {pz[k_apex]:.2f} m\n(Giro = {np.rad2deg(th[k_apex]):.0f} deg)",
-                     xy=(t[k_apex], pz[k_apex]), xytext=(t[k_apex]+0.04, pz[k_apex]+0.05),
+                     xy=(t[k_apex], pz[k_apex]), xytext=(t[k_apex]+0.04, pz[k_apex]+0.07),
                      arrowprops=dict(arrowstyle="->", lw=1.2, color="blue"),
                      bbox=dict(boxstyle="round,pad=0.2", fc="#EBF5FB", ec="blue"))
     axes[2].set_ylabel("CoM [m]")
-    axes[2].legend(loc="lower left", framealpha=0.9)
+    axes[2].legend(loc="upper right", framealpha=0.9)
     axes[2].grid(True)
+    axes[2].set_ylim(-0.15, 1.15)
 
     # 4. Inercia variable Iyy(t) (Efecto Tucking)
     axes[3].plot(t[:-1], Iyy_profile * 1000.0, "teal", lw=2.2, label=r"Momento Inercia $I_{yy}(t)$ [$g\cdot m^2$]")
     axes[3].annotate("Patas Recogidas (Tuck)\nReduccion Inercia 43%", xy=(0.5*(t_takeoff + t_flight_end), 32.0),
-                     xytext=(0.5*(t_takeoff + t_flight_end)-0.12, 42.0),
+                     xytext=(0.5*(t_takeoff + t_flight_end)-0.12, 45.0),
                      arrowprops=dict(arrowstyle="->", lw=1.2, color="teal"),
                      bbox=dict(boxstyle="round,pad=0.2", fc="#E8F8F5", ec="teal"))
     axes[3].set_ylabel(r"$I_{yy}$ [$g\cdot m^2$]")
     axes[3].set_xlabel("Tiempo [s]")
     axes[3].legend(loc="lower left", framealpha=0.9)
     axes[3].grid(True)
+    axes[3].set_ylim(25, 68)
 
     for ax in axes:
         for t_phase in [t_crouch, t_takeoff, t_flight_end]:
@@ -131,6 +135,7 @@ def generate_plots():
     ax1.set_title("Fuerzas de Reaccion del Suelo (GRF) e Impulso Angular en Despegue")
     ax1.legend(loc="upper right", ncol=3, framealpha=0.9)
     ax1.grid(True)
+    ax1.set_ylim(-20, 520)
 
     # Fuerzas tangenciales
     mu = 0.8
@@ -143,6 +148,7 @@ def generate_plots():
     ax2.set_ylabel("Fuerza Tangencial [N]")
     ax2.legend(loc="upper right", ncol=3, framealpha=0.9)
     ax2.grid(True)
+    ax2.set_ylim(-220, 220)
 
     # Torque neto de cabeceo tau_y
     d_x = 0.1805
@@ -163,13 +169,14 @@ def generate_plots():
 
     ax3.plot(t_steps, tau_y, "darkred", lw=2.2, label=r"Torque Neto Cabeceo $\tau_y(t)$ [N$\cdot$m]")
     ax3.annotate("Impulso Angular Despegue\n(Empuje Asimetrico Frontal/Trasero)", xy=(0.20, np.min(tau_y)),
-                 xytext=(0.25, np.min(tau_y) + 8.0),
+                 xytext=(0.28, np.min(tau_y) + 7.0),
                  arrowprops=dict(arrowstyle="->", lw=1.2, color="darkred"),
                  bbox=dict(boxstyle="round,pad=0.2", fc="#FDEDEC", ec="darkred"))
     ax3.set_xlabel("Tiempo [s]")
     ax3.set_ylabel(r"Torque $\tau_y$ [N$\cdot$m]")
     ax3.legend(loc="upper right", framealpha=0.9)
     ax3.grid(True)
+    ax3.set_ylim(-35, 15)
 
     for ax in [ax1, ax2, ax3]:
         for t_phase in [t_crouch, t_takeoff, t_flight_end]:
