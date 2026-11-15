@@ -1,0 +1,12 @@
+# Dependencias requeridas para EC3_PT1_RA (Robótica Avanzada - UTEC)
+# Compatible con Linux, macOS y Windows (WSL / Python 3.8 - 3.12)
+
+numpy>=1.22.0
+scipy>=1.8.0
+casadi>=3.6.0
+pybullet>=3.2.5
+robot_descriptions>=1.10.0
+matplotlib>=3.5.0
+imageio>=2.15.0
+imageio-ffmpeg>=0.4.5
+pillow>=9.0.0
