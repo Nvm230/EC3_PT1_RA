@@ -44,9 +44,9 @@ EC3_PT1_RA/
 
 ## 2. Requisitos e Instalación
 
-El código es multiplataforma y puede ejecutarse en cualquier computadora con Linux, macOS o Windows (WSL / nativo con Python 3.8 a 3.12).
+El código es multiplataforma y es compatible con Linux, macOS y Windows (WSL / nativo con Python 3.8 a 3.12).
 
-### Opción A: Entorno Virtual Estándar (Cualquier PC)
+### Opción A: Entorno Virtual de Python
 
 1. **Clonar el repositorio:**
    ```bash
@@ -71,9 +71,9 @@ El código es multiplataforma y puede ejecutarse en cualquier computadora con Li
    pip install -r requirements.txt
    ```
 
-### Opción B: Mediante Contenedor Distrobox / Podman / Docker (UTEC)
+### Opción B: Mediante Contenedor Distrobox / Podman / Docker
 
-Si se utiliza el contenedor `ros2_humble` configurado en el sistema:
+Si se utiliza el contenedor `ros2_humble`:
 ```bash
 distrobox enter ros2_humble
 cd /home/nvm/Documents/UTEC/EC3_pt1_Avanzada
@@ -99,14 +99,12 @@ El script maestro `scripts/run_all.py` ejecuta en secuencia:
 6. Generación de curvas analíticas del backflip (Parte 2).
 
 ```bash
-# Modo rápido headless (sin interfaz gráfica, apto para servidores y laptops):
+# Modo headless:
 python3 scripts/run_all.py
 
-# Con ventana visual interactiva de PyBullet:
+# Con interfaz gráfica:
 python3 scripts/run_all.py --gui
 ```
-
-Tiempo estimado de ejecución: **16 segundos** en total.
 
 ---
 
@@ -161,16 +159,9 @@ Tiempo estimado de ejecución: **16 segundos** en total.
 
 ---
 
-## 4. Compilación del Reporte Académico en PDF
+## 4. Reporte Técnico
 
-El documento formal de 12 páginas con toda la formulación matemática, figuras y tablas se encuentra en `reporte.tex`. Para compilarlo desde LaTeX:
-
-```bash
-pdflatex -interaction=nonstopmode reporte.tex
-pdflatex -interaction=nonstopmode reporte.tex
-```
-
-El documento resultante es `reporte.pdf`.
+El documento formal de 12 páginas con la formulación matemática detallada, análisis físico de factibilidad, gráficas analíticas y tablas de resultados se encuentra disponible en el archivo `reporte.pdf` (y su código fuente en `reporte.tex`).
 
 ---
 
